@@ -18,7 +18,7 @@ Docker does not run the iOS/Android app. For phones you either use Expo Go again
 cp .env.example .env             # then edit LAN_IP if you'll use a phone
 
 # Backend alone
-docker build -t ezra-backend backend && docker run -p 5000:5000 -v ezra-data:/data ezra-backend 
+docker build -t backend backend && docker run -p 5000:5000 -v ezra-data:/data backend 
 
 # backend + web   -> http://localhost:8080
 docker compose up --build
