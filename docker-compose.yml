@@ -1,0 +1,53 @@
+name: ezra
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      # Browsers enforce CORS; native Expo Go requests don't. Add origins here if you serve the web build elsewhere.
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:8081}
+    volumes:
+      - ezra-data:/data
+    restart: unless-stopped
+
+  # Production-style web build behind nginx -> http://localhost:8080
+  web:
+    build:
+      context: ./frontend
+      target: web
+      args:
+        # Baked into the bundle at build time. This is the URL the *browser* uses to reach the backend.
+        EXPO_PUBLIC_API_URL: ${WEB_API_URL:-http://localhost:5000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Metro dev server for Expo Go. Opt in with: docker compose --profile dev up metro
+  metro:
+    profiles: ["dev"]
+    build:
+      context: ./frontend
+      target: dev
+    ports:
+      - "8081:8081"
+    environment:
+      # A phone can't reach "localhost" on your computer, so this must be your LAN IP (set LAN_IP in .env).
+      EXPO_PUBLIC_API_URL: http://${LAN_IP:-localhost}:5000
+      # Makes the QR code / exp:// URL advertise your LAN IP instead of the container's internal IP.
+      EXPO_PACKAGER_PROXY_URL: http://${LAN_IP:-localhost}:8081
+    volumes:
+      - ./frontend:/app
+      - metro-node-modules:/app/node_modules
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+
+volumes:
+  ezra-data:
+  metro-node-modules:
