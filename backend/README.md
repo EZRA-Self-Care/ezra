@@ -2,7 +2,10 @@
 
 Flask + SQLite API for the EZRA Expo app (`../frontend`).
 
-## Run
+## Run (Docker): goto [`DOCKER.md`](../DOCKER.md)
+
+
+## Run (manual)
 
 ```bash
 cd backend

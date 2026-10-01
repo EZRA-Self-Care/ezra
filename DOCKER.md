@@ -1,6 +1,6 @@
 # Docker
 
-Expected layout: this file, `docker-compose.yml` and `.env.example` sit in the repo root, next to `backend/` and `frontend/`.
+This file, `docker-compose.yml` and `.env.example` sit in the repo root, next to `backend/` and `frontend/`.
 
 ## What each container is
 
@@ -12,17 +12,23 @@ Expected layout: this file, `docker-compose.yml` and `.env.example` sit in the r
 
 Docker does not run the iOS/Android app. For phones you either use Expo Go against `metro`, or build native binaries with EAS.
 
-## Use
+## Use (Individual Commands, use as needed)
 
 ```bash
 cp .env.example .env             # then edit LAN_IP if you'll use a phone
 
-docker compose up --build        # backend + web   -> http://localhost:8080
-docker compose --profile dev up --build metro   # backend + Metro for Expo Go (scan the QR code)
-docker compose down              # stop; add -v to also delete the database and cached node_modules
-```
+# Backend alone
+docker build -t ezra-backend backend && docker run -p 5000:5000 -v ezra-data:/data ezra-backend 
 
-Backend alone: `docker build -t ezra-backend backend && docker run -p 5000:5000 -v ezra-data:/data ezra-backend`.
+# backend + web   -> http://localhost:8080
+docker compose up --build
+
+# backend + Metro for Expo Go (scan the QR code)
+docker compose --profile dev up --build metro   
+
+# stop; add -v to also delete the database and cached node_modules
+docker compose down              
+```
 
 ## Current Deficiencies...
 
