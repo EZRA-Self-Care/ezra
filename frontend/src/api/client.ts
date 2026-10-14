@@ -61,6 +61,7 @@ export const api = {
 
   tasks: {
     list: () => request<Task[]>('/tasks'),
+    get: (id: number) => request<Task>(`/tasks/${id}`),
     create: (task: TaskInput) => request<Task>('/tasks', send('POST', task)),
     update: (id: number, task: Partial<TaskInput> & { done?: boolean }) =>
       request<Task>(`/tasks/${id}`, send('PATCH', task)),
