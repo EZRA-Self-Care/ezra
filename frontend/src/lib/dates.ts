@@ -21,7 +21,7 @@ export function describeDays(days: number[]): string {
 export function formatDue(date: string, today: string): string {
   if (date === today) return 'Today';
   if (date === addDays(today, 1)) return 'Tomorrow';
-  if (date < today) return 'Overdue';
+  if (date < today) return 'Carried over';
   const [y, m, d] = date.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
