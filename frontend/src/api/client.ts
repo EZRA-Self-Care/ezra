@@ -1,6 +1,16 @@
-import type { Goal, Revision, Task } from '@/types/models';
+import type {
+  Goal,
+  GoalInput,
+  Occurrence,
+  OccurrenceStatus,
+  Progress,
+  Revision,
+  Task,
+  TaskInput,
+  Today,
+} from '@/types/models';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
+const BASE_URL = `${process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000'}/api`;
 
 export class ApiError extends Error {
   constructor(
@@ -12,36 +22,51 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...init?.headers },
+    });
+  } catch {
+    throw new ApiError(0, "Can't reach the server. Check your connection and try again.");
+  }
   if (!res.ok) {
-    throw new ApiError(res.status, await res.text());
+    // Backend errors look like {"error": {"code": "...", "message": "..."}}
+    const data = await res.json().catch(() => null);
+    throw new ApiError(res.status, data?.error?.message ?? 'Something went wrong. Please try again.');
   }
   return res.status === 204 ? (undefined as T) : res.json();
 }
 
-const body = (data: unknown) => JSON.stringify(data);
+const send = (method: string, data?: unknown): RequestInit => ({
+  method,
+  body: data === undefined ? undefined : JSON.stringify(data),
+});
 
-// Endpoints from the API-01..API-05 contract.
 export const api = {
+  today: (date: string) => request<Today>(`/today?date=${date}`),
+  setOccurrence: (id: number, status: OccurrenceStatus) =>
+    request<Occurrence>(`/occurrences/${id}`, send('PATCH', { status })),
+
   goals: {
     list: () => request<Goal[]>('/goals'),
-    get: (id: string) => request<Goal>(`/goals/${id}`),
-    create: (goal: Omit<Goal, 'id'>) => request<Goal>('/goals', { method: 'POST', body: body(goal) }),
-    update: (id: string, goal: Partial<Goal>) =>
-      request<Goal>(`/goals/${id}`, { method: 'PATCH', body: body(goal) }),
-    remove: (id: string) => request<void>(`/goals/${id}`, { method: 'DELETE' }),
+    get: (id: number) => request<Goal>(`/goals/${id}`),
+    create: (goal: GoalInput) => request<Goal>('/goals', send('POST', goal)),
+    update: (id: number, goal: Partial<GoalInput> & { archived?: boolean; note?: string }) =>
+      request<Goal>(`/goals/${id}`, send('PATCH', goal)),
+    remove: (id: number) => request<void>(`/goals/${id}`, send('DELETE')),
+    revisions: (id: number) => request<Revision[]>(`/goals/${id}/revisions`),
   },
+
   tasks: {
     list: () => request<Task[]>('/tasks'),
-    create: (task: Omit<Task, 'id'>) => request<Task>('/tasks', { method: 'POST', body: body(task) }),
-    update: (id: string, task: Partial<Task>) =>
-      request<Task>(`/tasks/${id}`, { method: 'PATCH', body: body(task) }),
-    remove: (id: string) => request<void>(`/tasks/${id}`, { method: 'DELETE' }),
-    complete: (id: string) => request<Task>(`/tasks/${id}/complete`, { method: 'POST' }),
-    revise: (id: string, revision: Omit<Revision, 'taskId'>) =>
-      request<Task>(`/tasks/${id}/revise`, { method: 'POST', body: body(revision) }),
+    get: (id: number) => request<Task>(`/tasks/${id}`),
+    create: (task: TaskInput) => request<Task>('/tasks', send('POST', task)),
+    update: (id: number, task: Partial<TaskInput> & { done?: boolean }) =>
+      request<Task>(`/tasks/${id}`, send('PATCH', task)),
+    remove: (id: number) => request<void>(`/tasks/${id}`, send('DELETE')),
   },
+
+  progress: (end: string, days = 7) => request<Progress>(`/progress?days=${days}&end=${end}`),
 };
