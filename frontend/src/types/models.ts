@@ -29,6 +29,9 @@ export type Task = {
   due_date: string | null;
   goal_id: number | null; // one-off tasks have no goal
   created_at: string;
+  // Set by the backend when a task is edited; null until then.
+  // Optional until the backend ships it (Sprint 3).
+  updated_at?: string | null;
   completed_at: string | null;
 };
 

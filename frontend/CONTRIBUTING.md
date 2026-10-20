@@ -50,7 +50,7 @@ Always render the three states: `<Loading />`, `<ErrorState message={error} onRe
 
 **Forms that edit existing data.** Load first, then mount the form with its starting values (see `TaskForm` in [`src/app/tasks/[id].tsx`](src/app/tasks/[id].tsx)). Don't copy loaded data into state inside a `useEffect`; the lint rules reject it.
 
-**Dates.** The backend expects the user's *local* date. Use the helpers in [`src/lib/dates.ts`](src/lib/dates.ts) (`localDate()`, `formatDue()`) instead of `new Date().toISOString()`, which gives the UTC date and is wrong near midnight.
+**Dates.** The backend expects the user's *local* date. Use the helpers in [`src/lib/dates.ts`](src/lib/dates.ts) (`localDate()`, `formatDue()`, `formatAdded()`, `formatUpdated()`) instead of `new Date().toISOString()`, which gives the UTC date and is wrong near midnight.
 
 **After saving, go back** with `goBack('/lists')` from [`src/lib/navigation.ts`](src/lib/navigation.ts). It falls back to a tab when the screen was opened directly from a link.
 
