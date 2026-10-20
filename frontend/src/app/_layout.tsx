@@ -16,6 +16,8 @@ export default function RootLayout() {
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="goals/new" options={{ title: 'New goal', presentation: 'modal' }} />
+        <Stack.Screen name="goals/[id]" options={{ title: 'Goal' }} />
+        <Stack.Screen name="tasks/[id]" options={{ title: 'Task' }} />
       </Stack>
     </>
   );
