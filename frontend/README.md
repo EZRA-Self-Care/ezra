@@ -38,6 +38,8 @@ Expo (React Native) app for EZRA, a self-care app built on encouragement, not st
 
 Add packages with `npx expo install <pkg>` (not `npm install`) so versions match the Expo SDK.
 
+New to the codebase? Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and the patterns the screens use.
+
 ## Project structure
 
 ```
