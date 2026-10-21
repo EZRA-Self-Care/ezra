@@ -4,12 +4,12 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { api } from '@/api/client';
 import { Button } from '@/components/Button';
-import { CheckRow } from '@/components/CheckRow';
 import { Chips } from '@/components/Chips';
 import { Screen } from '@/components/Screen';
 import { EmptyState, ErrorState, Loading } from '@/components/StateView';
+import { TaskListItem } from '@/components/TaskListItem';
 import { colors, radius, spacing, typography } from '@/constants/theme';
-import { formatDue, localDate } from '@/lib/dates';
+import { localDate } from '@/lib/dates';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Goal, Task } from '@/types/models';
 
@@ -75,11 +75,10 @@ export default function ListsScreen() {
         <View key={group.key} style={[styles.group, { backgroundColor: TONES[i % TONES.length] }]}>
           <Text style={typography.heading}>{group.title}</Text>
           {group.tasks.map((t) => (
-            <CheckRow
+            <TaskListItem
               key={t.id}
-              title={t.title}
-              meta={t.due_date ? formatDue(t.due_date, today) : 'Any time'}
-              checked={t.done}
+              task={t}
+              today={today}
               disabled={mutation.busy}
               onToggle={() => toggle(t)}
               onPress={() => router.push({ pathname: '/tasks/[id]', params: { id: String(t.id) } })}
