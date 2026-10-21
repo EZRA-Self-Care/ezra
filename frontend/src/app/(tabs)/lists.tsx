@@ -21,7 +21,18 @@ const FILTERS: { label: string; value: Filter }[] = [
   { label: 'ALL', value: 'all' },
 ];
 
-const TONES = [colors.surfaceMuted, colors.peach, colors.mint, colors.sky];
+const EMPTY: Record<Filter, { title: string; description: string }> = {
+  today: { title: 'Nothing due today', description: 'Enjoy the space, or add one small step.' },
+  upcoming: { title: 'Nothing coming up', description: 'Tasks with a future date will show here.' },
+  all: {
+    title: 'No tasks yet',
+    description: 'Add a small, practical step. It can belong to a goal or stand on its own.',
+  },
+};
+
+const TONES = [colors.peach, colors.mint, colors.sky];
+// Tone follows the goal, not its position, so a group keeps its colour across filters.
+const toneFor = (goalId: number | null) => (goalId === null ? colors.surfaceMuted : TONES[goalId % TONES.length]);
 
 function matches(task: Task, filter: Filter, today: string) {
   if (filter === 'all') return true;
@@ -44,36 +55,63 @@ export default function ListsScreen() {
     if (saved && data) setData([data[0].map((t) => (t.id === saved.id ? saved : t)), data[1]]);
   };
 
+  const counts = useMemo(() => {
+    const tasks = data?.[0] ?? [];
+    return Object.fromEntries(
+      FILTERS.map((f) => [f.value, tasks.filter((t) => matches(t, f.value, today)).length]),
+    ) as Record<Filter, number>;
+  }, [data, today]);
+
   const groups = useMemo(() => {
     if (!data) return [];
     const [tasks, goals] = data;
     const visible = tasks.filter((t) => matches(t, filter, today));
     const byGoal = goals
-      .map((g) => ({ key: `g${g.id}`, title: g.title, tasks: visible.filter((t) => t.goal_id === g.id) }))
+      .map((g) => ({
+        key: `g${g.id}`,
+        title: g.title,
+        tone: toneFor(g.id),
+        tasks: visible.filter((t) => t.goal_id === g.id),
+      }))
       .filter((g) => g.tasks.length > 0);
     // One-off tasks, plus any tied to an archived goal.
     const goalIds = new Set(goals.map((g) => g.id));
     const other = visible.filter((t) => t.goal_id === null || !goalIds.has(t.goal_id));
-    return other.length ? [...byGoal, { key: 'other', title: 'Other to-dos', tasks: other }] : byGoal;
+    const groups = other.length
+      ? [...byGoal, { key: 'other', title: 'Other to-dos', tone: toneFor(null), tasks: other }]
+      : byGoal;
+    // Open tasks first within each group; completed ones sink to the bottom.
+    return groups.map((g) => ({ ...g, tasks: [...g.tasks].sort((a, b) => Number(a.done) - Number(b.done)) }));
   }, [data, filter, today]);
+
+  const addTask = () => router.push({ pathname: '/tasks/[id]', params: { id: 'new' } });
 
   return (
     <Screen title="My to-do lists" subtitle="Simple actions, organized your way.">
-      <Chips options={FILTERS} isSelected={(v) => v === filter} onPress={setFilter} />
+      <Chips
+        options={FILTERS.map((f) => ({ ...f, label: data ? `${f.label} ${counts[f.value]}` : f.label }))}
+        isSelected={(v) => v === filter}
+        onPress={setFilter}
+      />
+      <Button label="+ Add task" onPress={addTask} />
       {loading ? <Loading /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {mutation.error ? <ErrorState message={mutation.error} /> : null}
 
       {data && groups.length === 0 ? (
-        <EmptyState
-          title={filter === 'upcoming' ? 'Nothing coming up' : 'Nothing here yet'}
-          description="Add a small, practical step. It can belong to a goal or stand on its own."
-        />
+        <EmptyState title={EMPTY[filter].title} description={EMPTY[filter].description} />
       ) : null}
 
-      {groups.map((group, i) => (
-        <View key={group.key} style={[styles.group, { backgroundColor: TONES[i % TONES.length] }]}>
-          <Text style={typography.heading}>{group.title}</Text>
+      {groups.map((group) => (
+        <View key={group.key} style={[styles.group, { backgroundColor: group.tone }]}>
+          <View style={styles.groupHeader}>
+            <Text style={[typography.heading, styles.groupTitle]} numberOfLines={1}>
+              {group.title}
+            </Text>
+            <Text style={typography.caption}>
+              {group.tasks.filter((t) => t.done).length} of {group.tasks.length} done
+            </Text>
+          </View>
           {group.tasks.map((t) => (
             <TaskListItem
               key={t.id}
@@ -87,12 +125,15 @@ export default function ListsScreen() {
         </View>
       ))}
 
-      <Button label="+ Add task" onPress={() => router.push({ pathname: '/tasks/[id]', params: { id: 'new' } })} />
-      <Text style={typography.caption}>Tap a task to edit, reschedule or delete it.</Text>
+      {groups.length > 0 ? (
+        <Text style={typography.caption}>Tap a task to edit, reschedule or delete it.</Text>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   group: { borderRadius: radius.md, padding: spacing.md, gap: spacing.sm },
+  groupHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.sm },
+  groupTitle: { flexShrink: 1 },
 });
