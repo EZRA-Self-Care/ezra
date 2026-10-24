@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 
 import { api } from '@/api/client';
@@ -12,44 +12,31 @@ import { goBack } from '@/lib/navigation';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Goal, Task } from '@/types/models';
 
-// UI-02: create, edit, reschedule or delete a to-do. Route id is a task id or "new".
+// UI-02: edit, reschedule or delete a to-do. New tasks are added in tasks/new.tsx.
 export default function TaskScreen() {
-  const { id, goalId } = useLocalSearchParams<{ id: string; goalId?: string }>();
-  const isNew = id === 'new';
+  const { id } = useLocalSearchParams<{ id: string }>();
   const today = useMemo(() => localDate(), []);
 
-  const load = useCallback(
-    () => Promise.all([isNew ? Promise.resolve(null) : api.tasks.get(Number(id)), api.goals.list()]),
-    [id, isNew],
-  );
-  const { data, error, loading, reload } = useApi<[Task | null, Goal[]]>(load);
+  const load = useCallback(() => Promise.all([api.tasks.get(Number(id)), api.goals.list()]), [id]);
+  const { data, error, loading, reload } = useApi<[Task, Goal[]]>(load);
 
   return (
-    <Screen title={isNew ? 'Add a task' : 'Edit task'} subtitle="Keep it small enough to start.">
-      <Stack.Screen options={{ title: isNew ? 'New task' : 'Task' }} />
+    <Screen title="Edit task" subtitle="Keep it small enough to start.">
       {loading ? <Loading /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
-      {data ? (
-        <TaskForm
-          task={data[0]}
-          goals={data[1]}
-          today={today}
-          defaultGoal={goalId ? Number(goalId) : null}
-        />
-      ) : null}
+      {data ? <TaskForm task={data[0]} goals={data[1]} today={today} /> : null}
     </Screen>
   );
 }
 
-type FormProps = { task: Task | null; goals: Goal[]; today: string; defaultGoal: number | null };
+type FormProps = { task: Task; goals: Goal[]; today: string };
 
-function TaskForm({ task, goals, today, defaultGoal }: FormProps) {
-  const isNew = task === null;
+function TaskForm({ task, goals, today }: FormProps) {
   const mutation = useMutation();
-  const [title, setTitle] = useState(task?.title ?? '');
-  const [notes, setNotes] = useState(task?.notes ?? '');
-  const [due, setDue] = useState<string | null>(task ? task.due_date : today);
-  const [goal, setGoal] = useState<number | null>(task ? task.goal_id : defaultGoal);
+  const [title, setTitle] = useState(task.title);
+  const [notes, setNotes] = useState(task.notes);
+  const [due, setDue] = useState<string | null>(task.due_date);
+  const [goal, setGoal] = useState<number | null>(task.goal_id);
 
   const dueOptions = [
     { label: 'Today', value: today },
@@ -73,13 +60,13 @@ function TaskForm({ task, goals, today, defaultGoal }: FormProps) {
       return;
     }
     const body = { title, notes, due_date: due, goal_id: goal };
-    const saved = await mutation.run(() => (isNew ? api.tasks.create(body) : api.tasks.update(task.id, body)));
+    const saved = await mutation.run(() => api.tasks.update(task.id, body));
     if (saved) goBack('/lists');
   };
 
   const remove = async () => {
     const ok = await mutation.run(async () => {
-      await api.tasks.remove(task!.id);
+      await api.tasks.remove(task.id);
       return true;
     });
     if (ok) goBack('/lists');
@@ -104,8 +91,8 @@ function TaskForm({ task, goals, today, defaultGoal }: FormProps) {
       </FieldGroup>
 
       {mutation.error ? <ErrorState message={mutation.error} /> : null}
-      <Button label={isNew ? 'Add task' : 'Save changes'} onPress={save} disabled={mutation.busy} />
-      {!isNew ? <Button label="Delete task" variant="secondary" onPress={remove} disabled={mutation.busy} /> : null}
+      <Button label="Save changes" onPress={save} disabled={mutation.busy} />
+      <Button label="Delete task" variant="secondary" onPress={remove} disabled={mutation.busy} />
     </>
   );
 }

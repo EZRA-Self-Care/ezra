@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { Chips } from '@/components/Chips';
 import { Screen } from '@/components/Screen';
 import { EmptyState, ErrorState, Loading } from '@/components/StateView';
-import { TaskListItem } from '@/components/TaskListItem';
+import { TaskCard } from '@/components/TaskCard';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { localDate } from '@/lib/dates';
 import { useApi, useMutation } from '@/lib/useApi';
@@ -84,7 +84,7 @@ export default function ListsScreen() {
     return groups.map((g) => ({ ...g, tasks: [...g.tasks].sort((a, b) => Number(a.done) - Number(b.done)) }));
   }, [data, filter, today]);
 
-  const addTask = () => router.push({ pathname: '/tasks/[id]', params: { id: 'new' } });
+  const addTask = () => router.push('/tasks/new');
 
   return (
     <Screen title="My to-do lists" subtitle="Simple actions, organized your way.">
@@ -113,7 +113,7 @@ export default function ListsScreen() {
             </Text>
           </View>
           {group.tasks.map((t) => (
-            <TaskListItem
+            <TaskCard
               key={t.id}
               task={t}
               today={today}

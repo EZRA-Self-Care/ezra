@@ -108,7 +108,7 @@ function GoalEditor({ goal, onSaved }: { goal: Goal; onSaved: () => void }) {
       <Button
         label="Add a task for this goal"
         variant="secondary"
-        onPress={() => router.push({ pathname: '/tasks/[id]', params: { id: 'new', goalId: String(goalId) } })}
+        onPress={() => router.push({ pathname: '/tasks/new', params: { goalId: String(goalId) } })}
       />
       <Button label="Pause goal (archive)" variant="secondary" onPress={archive} disabled={mutation.busy} />
     </>
