@@ -14,18 +14,23 @@ import { goBack } from '@/lib/navigation';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Goal, Revision } from '@/types/models';
 
+// Friendly names for the backend field names that appear in revision history.
 const FIELD_NAMES: Record<string, string> = {
   title: 'Name',
   description: 'Why',
   days_of_week: 'Schedule',
 };
 
+/** Formats one side of a revision (the old or new value) for display. */
 function describeChange(field: string, value: unknown) {
   if (field === 'days_of_week') return describeDays(value as number[]);
   return String(value || '(empty)');
 }
 
-// UI-03: Goal detail, editing plan revisions and history
+/**
+ * UI-03: Goal detail. Loads the goal and its revision history, shows the editor,
+ * and lists past plan changes underneath so the user can see how the plan evolved.
+ */
 export default function GoalScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const goalId = Number(id);
@@ -59,6 +64,10 @@ export default function GoalScreen() {
   );
 }
 
+/**
+ * Edit form for a goal. Mounted only after the goal has loaded, so its starting values
+ * come straight from `goal` (no copying data into state inside an effect).
+ */
 function GoalEditor({ goal, onSaved }: { goal: Goal; onSaved: () => void }) {
   const goalId = goal.id;
   const mutation = useMutation();
@@ -83,11 +92,13 @@ function GoalEditor({ goal, onSaved }: { goal: Goal; onSaved: () => void }) {
       }),
     );
     if (saved) {
+      // Clear the note and reload, so the new revision appears in History.
       setNote('');
       onSaved();
     }
   };
 
+  // Pausing hides the goal from Today and Goals without deleting its history.
   const archive = async () => {
     const saved = await mutation.run(() => api.goals.update(goalId, { archived: true }));
     if (saved) goBack('/goals');

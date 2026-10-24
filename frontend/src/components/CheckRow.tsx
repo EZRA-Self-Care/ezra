@@ -14,6 +14,10 @@ type Props = {
   onAction?: () => void;
 };
 
+/**
+ * Checklist row used on the Today screen: a checkbox, a title with a line of detail,
+ * and an optional action on the right (e.g. "Skip" / "Undo").
+ */
 export function CheckRow({ title, meta, checked, muted, disabled, onToggle, onPress, actionLabel, onAction }: Props) {
   return (
     <View style={[styles.row, muted && styles.muted]}>
@@ -21,6 +25,7 @@ export function CheckRow({ title, meta, checked, muted, disabled, onToggle, onPr
         accessibilityRole="checkbox"
         accessibilityState={{ checked, disabled }}
         accessibilityLabel={title}
+        // hitSlop enlarges the tap target beyond the small 22px box.
         hitSlop={8}
         disabled={disabled}
         onPress={onToggle}

@@ -11,9 +11,10 @@ import { describeDays } from '@/lib/dates';
 import { useApi } from '@/lib/useApi';
 import type { Goal } from '@/types/models';
 
+// Card colours cycle through the design's tones so neighbouring goals look distinct.
 const TONES = [colors.mint, colors.peach, colors.sky, colors.surfaceMuted];
 
-// UI-03: Goal list
+/** UI-03: Goal list. Each card shows the goal, why it matters and its schedule; tap to open and edit it. */
 export default function GoalsScreen() {
   const load = useCallback(() => api.goals.list(), []);
   const { data, error, loading, reload } = useApi<Goal[]>(load);

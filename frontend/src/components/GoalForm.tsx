@@ -2,14 +2,17 @@ import { Chips } from '@/components/Chips';
 import { Field, FieldGroup } from '@/components/Field';
 import { DAY_LABELS } from '@/lib/dates';
 
+/** The editable fields of a goal while the user is filling in the form. `days` uses 0 = Mon ... 6 = Sun. */
 export type GoalDraft = { title: string; description: string; days: number[] };
 
+// Quick picks above the individual day chips. An empty list means every day (backend convention).
 const PRESETS = [
   { label: 'Every day', value: [] as number[] },
   { label: 'Weekdays', value: [0, 1, 2, 3, 4] },
   { label: 'Weekends', value: [5, 6] },
 ];
 
+// Compare day lists by value; both are kept sorted, so joining them is enough.
 const same = (a: number[], b: number[]) => a.join() === b.join();
 
 type Props = { draft: GoalDraft; onChange: (draft: GoalDraft) => void };
@@ -20,6 +23,7 @@ export function GoalForm({ draft, onChange }: Props) {
     // Empty means every day, so start from all seven days.
     const current = draft.days.length === 0 ? [0, 1, 2, 3, 4, 5, 6] : draft.days;
     const days = current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
+    // Selecting all seven days collapses back to [] so it shows as "Every day".
     onChange({ ...draft, days: days.length === 7 ? [] : days.sort() });
   };
 
@@ -48,6 +52,7 @@ export function GoalForm({ draft, onChange }: Props) {
         />
         <Chips
           options={DAY_LABELS.map((label, value) => ({ label, value }))}
+          // With "Every day" selected (empty list), every day chip appears selected.
           isSelected={(d) => draft.days.length === 0 || draft.days.includes(d)}
           onPress={toggleDay}
         />

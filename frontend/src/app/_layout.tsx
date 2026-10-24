@@ -18,6 +18,10 @@ function CloseButton() {
   );
 }
 
+/**
+ * Root navigator. The four tabs live in (tabs)/; the other screens open on top of them.
+ * Every screen gets the app background and a header in the design's green.
+ */
 export default function RootLayout() {
   return (
     <>

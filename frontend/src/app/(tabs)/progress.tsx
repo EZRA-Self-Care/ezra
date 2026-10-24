@@ -14,11 +14,16 @@ import type { Progress, Today } from '@/types/models';
 
 const TONES = [colors.surfaceMuted, colors.peach, colors.mint];
 
-// UI-04: Recovery + progress
+/**
+ * UI-04: Progress and recovery.
+ * Loads the last 7 days of progress, plus yesterday's check-ins to find any that were missed.
+ * Missed ones get a "Plans can change" card instead of a broken streak.
+ */
 export default function ProgressScreen() {
   const today = useMemo(() => localDate(), []);
   const yesterday = addDays(today, -1);
   const load = useCallback(
+    // Both requests run in parallel. Calling /today for yesterday also creates any check-ins the app never loaded.
     () => Promise.all([api.progress(today, 7), api.today(yesterday)]),
     [today, yesterday],
   );
@@ -29,6 +34,7 @@ export default function ProgressScreen() {
   // Check-ins from yesterday that were neither done nor skipped.
   const missed = data?.[1].occurrences.filter((o) => o.status === 'pending') ?? [];
 
+  // "Let it rest" marks the missed check-in as skipped: a rest day, excluded from the completion rate.
   const letItRest = async (id: number) => {
     const saved = await mutation.run(() => api.setOccurrence(id, 'skipped'));
     if (saved) reload();
@@ -109,6 +115,7 @@ export default function ProgressScreen() {
                 style={[styles.goal, { backgroundColor: TONES[i % TONES.length] }]}>
                 <Text style={typography.heading}>{g.title}</Text>
                 <Text style={typography.caption}>
+                  {/* Rest days are subtracted from the planned total, so they never count as misses. */}
                   {g.done} / {g.scheduled - g.skipped} planned actions
                   {g.skipped > 0 ? ` · ${g.skipped} rest ${g.skipped === 1 ? 'day' : 'days'}` : ''}
                 </Text>

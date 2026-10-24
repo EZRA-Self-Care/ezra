@@ -9,6 +9,10 @@ type Props = {
   variant?: 'primary' | 'secondary';
 };
 
+/**
+ * Pill-shaped button from the design. `primary` is the filled green action; `secondary` is the quieter option.
+ * Pass `disabled={mutation.busy}` while saving so it can't be pressed twice.
+ */
 export function Button({ label, onPress, disabled, variant = 'primary' }: Props) {
   const secondary = variant === 'secondary';
   return (
@@ -17,6 +21,7 @@ export function Button({ label, onPress, disabled, variant = 'primary' }: Props)
       accessibilityState={{ disabled }}
       onPress={onPress}
       disabled={disabled}
+      // Dim while pressed or disabled so the user gets feedback either way.
       style={({ pressed }) => [
         styles.button,
         secondary && styles.secondary,

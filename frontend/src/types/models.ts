@@ -1,6 +1,7 @@
 // Mirrors the Flask API responses (see backend/README.md).
 // Dates are YYYY-MM-DD in the user's local time; timestamps are ISO 8601 UTC.
 
+/** A personal or spiritual goal the user is building, with the weekdays it's scheduled on. */
 export type Goal = {
   id: number;
   title: string;
@@ -11,8 +12,10 @@ export type Goal = {
   created_at: string;
 };
 
+/** `skipped` is a deliberate rest day: it's never counted against the user. */
 export type OccurrenceStatus = 'pending' | 'done' | 'skipped';
 
+/** One scheduled check-in for a goal on a single date. */
 export type Occurrence = {
   id: number;
   goal_id: number;
@@ -21,10 +24,11 @@ export type Occurrence = {
   completed_at: string | null;
 };
 
+/** A to-do. It can stand alone or belong to a goal. */
 export type Task = {
   id: number;
   title: string;
-  notes: string;
+  notes: string; // the task's short description
   done: boolean;
   due_date: string | null;
   goal_id: number | null; // one-off tasks have no goal
@@ -35,6 +39,7 @@ export type Task = {
   completed_at: string | null;
 };
 
+/** A saved edit to a goal's plan, e.g. `{ days_of_week: { from: [...], to: [...] } }`. */
 export type Revision = {
   id: number;
   goal_id: number;
@@ -43,6 +48,7 @@ export type Revision = {
   created_at: string;
 };
 
+/** Response of GET /api/today: everything the Today dashboard shows. */
 export type Today = {
   date: string;
   occurrences: (Occurrence & { goal: Goal })[];
@@ -50,6 +56,7 @@ export type Today = {
   summary: { goals_done: number; goals_total: number; tasks_due: number };
 };
 
+/** Per-goal numbers on the Progress screen. `completion_rate` is null when nothing was attempted. */
 export type GoalStats = {
   goal_id: number;
   title: string;
@@ -59,6 +66,7 @@ export type GoalStats = {
   completion_rate: number | null;
 };
 
+/** Response of GET /api/progress. */
 export type Progress = {
   start: string;
   end: string;
@@ -69,6 +77,7 @@ export type Progress = {
   recovery: { goal_id: number; title: string; completion_rate: number; suggestion: string }[];
 };
 
+/** Body for creating a goal. Optional fields fall back to backend defaults. */
 export type GoalInput = {
   title: string;
   description?: string;
@@ -76,6 +85,7 @@ export type GoalInput = {
   start_date?: string;
 };
 
+/** Body for creating a task. */
 export type TaskInput = {
   title: string;
   notes?: string;

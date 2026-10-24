@@ -17,6 +17,7 @@ const toneColor = {
   sky: colors.sky,
 };
 
+/** Rounded info card with a title, optional description and optional extra content (e.g. action links). */
 export function Card({ title, description, tone = 'default', children }: Props) {
   return (
     <View style={[styles.card, { backgroundColor: toneColor[tone] }]}>

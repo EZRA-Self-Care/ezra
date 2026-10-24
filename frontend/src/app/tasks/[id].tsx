@@ -12,7 +12,10 @@ import { goBack } from '@/lib/navigation';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Goal, Task } from '@/types/models';
 
-// UI-02: edit, reschedule or delete a to-do. New tasks are added in tasks/new.tsx.
+/**
+ * UI-02: edit, reschedule or delete a to-do. New tasks are added in tasks/new.tsx.
+ * Loads the task and the goal list (for the Goal chips), then mounts TaskForm.
+ */
 export default function TaskScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const today = useMemo(() => localDate(), []);
@@ -31,6 +34,7 @@ export default function TaskScreen() {
 
 type FormProps = { task: Task; goals: Goal[]; today: string };
 
+/** Edit form for one task. Mounted after loading, so its fields start from the saved task. */
 function TaskForm({ task, goals, today }: FormProps) {
   const mutation = useMutation();
   const [title, setTitle] = useState(task.title);
@@ -55,6 +59,7 @@ function TaskForm({ task, goals, today }: FormProps) {
   ];
 
   const save = async () => {
+    // Check on the device first for a quicker message; the backend validates again.
     if (!title.trim()) {
       mutation.setError('Give the task a short name.');
       return;
@@ -65,6 +70,7 @@ function TaskForm({ task, goals, today }: FormProps) {
   };
 
   const remove = async () => {
+    // DELETE returns no body, so return true to tell "deleted" apart from "failed" (undefined).
     const ok = await mutation.run(async () => {
       await api.tasks.remove(task.id);
       return true;

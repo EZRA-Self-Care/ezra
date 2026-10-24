@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router/js-tabs';
 
 import { colors } from '@/constants/theme';
 
+/** Bottom tab bar: Today, Lists, Goals and Progress, matching the MVP design. Labels only, no icons. */
 export default function TabsLayout() {
   return (
     <Tabs

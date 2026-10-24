@@ -10,6 +10,11 @@ type Props<T> = {
   onPress: (value: T) => void;
 };
 
+/**
+ * Row of selectable pills, used for filters, due dates, goals and schedule days.
+ * Generic over the value type, so options can hold strings, numbers, dates or arrays.
+ * The parent decides what's selected via `isSelected`, so it works for single- and multi-select.
+ */
 export function Chips<T>({ options, isSelected, onPress }: Props<T>) {
   return (
     <View style={styles.row}>

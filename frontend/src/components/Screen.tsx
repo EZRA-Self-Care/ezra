@@ -10,8 +10,13 @@ type Props = {
   children?: ReactNode;
 };
 
+/**
+ * Standard page wrapper: safe-area padding, scrolling, the EZRA wordmark, a title and an optional subtitle.
+ * Every screen renders inside this so headers and spacing match.
+ */
 export function Screen({ title, subtitle, children }: Props) {
   return (
+    // Only the top edge: the tab bar already handles the bottom safe area.
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.brand}>EZRA</Text>

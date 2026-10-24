@@ -13,8 +13,13 @@ import { formatDue, greeting, localDate } from '@/lib/dates';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { OccurrenceStatus, Today } from '@/types/models';
 
-// UI-01: Today dashboard
+/**
+ * UI-01: Today dashboard.
+ * Shows today's goal check-ins and the to-dos due by today, loaded from GET /api/today.
+ * Check-ins can be completed, skipped with no penalty, or undone.
+ */
 export default function TodayScreen() {
+  // Computed once, so the screen keeps showing the same day if it stays open past midnight.
   const date = useMemo(() => localDate(), []);
   const load = useCallback(() => api.today(date), [date]);
   const { data, setData, error, loading, reload } = useApi<Today>(load);
@@ -22,12 +27,14 @@ export default function TodayScreen() {
 
   const setStatus = async (id: number, status: OccurrenceStatus) => {
     const saved = await mutation.run(() => api.setOccurrence(id, status));
+    // Reload so the "N of M complete" summary from the backend stays accurate.
     if (saved) reload();
   };
 
   const completeTask = async (id: number) => {
     const saved = await mutation.run(() => api.tasks.update(id, { done: true }));
     if (saved && data) {
+      // Completed to-dos leave Today, so remove it locally instead of refetching.
       setData({ ...data, tasks: data.tasks.filter((t) => t.id !== id) });
     }
   };
@@ -45,6 +52,7 @@ export default function TodayScreen() {
         <>
           <Card
             tone="mint"
+            // Encouraging message: celebrate when everything is done, never scold when it isn't.
             title={doneCount > 0 && doneCount === totalCount ? 'You showed up today' : 'Your pace is enough'}
             description={
               totalCount === 0
@@ -81,6 +89,7 @@ export default function TodayScreen() {
               muted={o.status === 'skipped'}
               disabled={mutation.busy}
               onToggle={() => setStatus(o.id, o.status === 'done' ? 'pending' : 'done')}
+              // Pending: offer Skip. Skipped: offer Undo. Done: the checkbox itself undoes it.
               actionLabel={o.status === 'pending' ? 'Skip' : o.status === 'skipped' ? 'Undo' : undefined}
               onAction={() => setStatus(o.id, o.status === 'pending' ? 'skipped' : 'pending')}
             />

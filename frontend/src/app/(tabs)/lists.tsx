@@ -13,6 +13,7 @@ import { localDate } from '@/lib/dates';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Goal, Task } from '@/types/models';
 
+/** The three views of the task list, shown as chips at the top. */
 type Filter = 'today' | 'upcoming' | 'all';
 
 const FILTERS: { label: string; value: Filter }[] = [
@@ -21,6 +22,7 @@ const FILTERS: { label: string; value: Filter }[] = [
   { label: 'ALL', value: 'all' },
 ];
 
+// What to say when a filter has no tasks, so the empty screen still suggests a next step.
 const EMPTY: Record<Filter, { title: string; description: string }> = {
   today: { title: 'Nothing due today', description: 'Enjoy the space, or add one small step.' },
   upcoming: { title: 'Nothing coming up', description: 'Tasks with a future date will show here.' },
@@ -34,6 +36,7 @@ const TONES = [colors.peach, colors.mint, colors.sky];
 // Tone follows the goal, not its position, so a group keeps its colour across filters.
 const toneFor = (goalId: number | null) => (goalId === null ? colors.surfaceMuted : TONES[goalId % TONES.length]);
 
+/** Whether a task belongs in the given filter. Completed tasks only appear under All. */
 function matches(task: Task, filter: Filter, today: string) {
   if (filter === 'all') return true;
   if (task.done) return false;
@@ -42,7 +45,11 @@ function matches(task: Task, filter: Filter, today: string) {
   return !!task.due_date && task.due_date > today;
 }
 
-// UI-02: To-do list CRUD, grouped by goal
+/**
+ * UI-02: Task list. Loads tasks and goals from the backend, then groups the tasks by goal
+ * (plus an "Other to-dos" group) under the selected filter. Tasks render as TaskCards;
+ * the checkbox completes a task and tapping the card opens it for editing.
+ */
 export default function ListsScreen() {
   const today = useMemo(() => localDate(), []);
   const [filter, setFilter] = useState<Filter>('today');
@@ -52,9 +59,11 @@ export default function ListsScreen() {
 
   const toggle = async (task: Task) => {
     const saved = await mutation.run(() => api.tasks.update(task.id, { done: !task.done }));
+    // Swap in the saved task from the response so the list updates without a full reload.
     if (saved && data) setData([data[0].map((t) => (t.id === saved.id ? saved : t)), data[1]]);
   };
 
+  // Number of tasks in each filter, shown on the chips (e.g. "TODAY 3").
   const counts = useMemo(() => {
     const tasks = data?.[0] ?? [];
     return Object.fromEntries(
@@ -62,6 +71,7 @@ export default function ListsScreen() {
     ) as Record<Filter, number>;
   }, [data, today]);
 
+  // Build the visible groups: one per goal that has matching tasks, then "Other to-dos".
   const groups = useMemo(() => {
     if (!data) return [];
     const [tasks, goals] = data;
@@ -89,6 +99,7 @@ export default function ListsScreen() {
   return (
     <Screen title="My to-do lists" subtitle="Simple actions, organized your way.">
       <Chips
+        // Show counts only once data has loaded, so the chips don't flash "0".
         options={FILTERS.map((f) => ({ ...f, label: data ? `${f.label} ${counts[f.value]}` : f.label }))}
         isSelected={(v) => v === filter}
         onPress={setFilter}

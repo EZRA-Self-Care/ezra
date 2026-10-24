@@ -22,13 +22,15 @@ export default function NewGoalScreen() {
       return;
     }
     const today = localDate();
+    // One mutation for both requests, so the button stays disabled until both finish.
     const saved = await mutation.run(async () => {
       const goal = await api.goals.create({
         title: draft.title,
         description: draft.description,
         days_of_week: draft.days,
-        start_date: today,
+        start_date: today, // local date, so the goal starts today wherever the user is
       });
+      // The optional first action becomes a to-do linked to the new goal, due today.
       if (firstAction.trim()) {
         await api.tasks.create({ title: firstAction, goal_id: goal.id, due_date: today });
       }

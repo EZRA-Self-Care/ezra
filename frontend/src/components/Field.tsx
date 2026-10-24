@@ -4,6 +4,7 @@ import { colors, radius, spacing, typography } from '@/constants/theme';
 
 type Props = TextInputProps & { label: string };
 
+/** Labelled text input. Any TextInput prop (value, placeholder, multiline, maxLength...) passes straight through. */
 export function Field({ label, style, ...input }: Props) {
   return (
     <View style={styles.field}>
@@ -18,6 +19,7 @@ export function Field({ label, style, ...input }: Props) {
   );
 }
 
+/** Same label style as Field, wrapped around custom controls such as Chips. */
 export function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <View style={styles.field}>
