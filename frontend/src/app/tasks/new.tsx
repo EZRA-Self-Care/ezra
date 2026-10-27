@@ -64,6 +64,8 @@ export default function NewTaskScreen() {
       </View>
 
       {mutation.error ? <ErrorState message={mutation.error} /> : null}
+      {/* Explains why Save is disabled, instead of leaving a greyed-out button with no reason. */}
+      {!canSave ? <Text style={typography.caption}>Add a name and a short description to save.</Text> : null}
       <Button label="Save task" disabled={!canSave || mutation.busy} onPress={saveTask} />
     </Screen>
   );

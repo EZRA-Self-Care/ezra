@@ -49,7 +49,8 @@ src/
     (tabs)/            # Bottom tabs: Today, Lists, Goals, Progress
     goals/new.tsx      # Create a goal
     goals/[id].tsx     # Edit a goal's plan, pause it, see revision history
-    tasks/[id].tsx     # Add / edit / delete a to-do ("new" for a new one)
+    tasks/new.tsx      # Add a task (name + short description); ?goalId= attaches it to a goal
+    tasks/[id].tsx     # Edit / reschedule / delete a task
   api/client.ts        # Typed fetch wrapper for the Flask /api endpoints
   components/          # Shared UI (Screen, Card, Button, CheckRow, Field, Chips, ...)
   constants/theme.ts   # Colors, spacing, typography from the MVP design
@@ -66,5 +67,19 @@ src/
 | UI-03 | Goal setup + detail  | `src/app/(tabs)/goals.tsx`, `src/app/goals/`       | Done   |
 | UI-04 | Recovery + progress  | `src/app/(tabs)/progress.tsx`                      | Done   |
 | UI-05 | Local reminders      | not started                                        | Next   |
+
+## Task fields
+
+What a task stores and where the app shows it (Sprint 3 requirements):
+
+| Requirement        | Backend field | Shown on                                    |
+| ------------------ | ------------- | ------------------------------------------- |
+| Task name          | `title`       | Task card, Add / Edit task                  |
+| Small description  | `notes`       | Task card, Add / Edit task                  |
+| Date of input      | `created_at`  | Task card ("Added")                         |
+| Date updated       | `updated_at`  | Task card ("Updated"), once the backend sends it |
+| Due date / goal    | `due_date`, `goal_id` | Lists filters and goal groups, set in Edit task |
+
+Dates come from the backend in UTC and are shown in the phone's local time. `updated_at` is optional in `src/types/models.ts`, so the app works before and after the backend adds it.
 
 Every screen loads from the backend when it gains focus and has loading, error and empty states. Buttons are disabled while a request is in flight to prevent double submits.
