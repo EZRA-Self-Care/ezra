@@ -1,33 +1,38 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { api } from '@/api/client';
 import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
 import { CheckRow } from '@/components/CheckRow';
+import { FocusCard } from '@/components/FocusCard';
 import { Screen } from '@/components/Screen';
 import { EmptyState, ErrorState, Loading } from '@/components/StateView';
-import { colors, radius, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
 import { formatDue, greeting, localDate } from '@/lib/dates';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { OccurrenceStatus, Today } from '@/types/models';
 
 /**
  * UI-01: Today dashboard.
- * Shows today's goal check-ins and the to-dos due by today, loaded from GET /api/today.
+ * Shows the Today's Focus card, then today's goal check-ins and the to-dos due by today, loaded from GET /api/today.
  * Check-ins can be completed, skipped with no penalty, or undone.
  */
 export default function TodayScreen() {
   // Computed once, so the screen keeps showing the same day if it stays open past midnight.
   const date = useMemo(() => localDate(), []);
-  const load = useCallback(() => api.today(date), [date]);
-  const { data, setData, error, loading, reload } = useApi<Today>(load);
+  // /api/today drops finished to-dos, so count the ones finished today separately for the progress ring.
+  const load = useCallback(async () => {
+    const [today, tasks] = await Promise.all([api.today(date), api.tasks.list()]);
+    const finishedTasks = tasks.filter((t) => t.completed_at && localDate(new Date(t.completed_at)) === date).length;
+    return { ...today, finishedTasks };
+  }, [date]);
+  const { data, setData, error, loading, reload } = useApi<Today & { finishedTasks: number }>(load);
   const mutation = useMutation();
 
   const setStatus = async (id: number, status: OccurrenceStatus) => {
     const saved = await mutation.run(() => api.setOccurrence(id, status));
-    // Reload so the "N of M complete" summary from the backend stays accurate.
+    // Reload so the progress ring's counts from the backend stay accurate.
     if (saved) reload();
   };
 
@@ -35,12 +40,28 @@ export default function TodayScreen() {
     const saved = await mutation.run(() => api.tasks.update(id, { done: true }));
     if (saved && data) {
       // Completed to-dos leave Today, so remove it locally instead of refetching.
-      setData({ ...data, tasks: data.tasks.filter((t) => t.id !== id) });
+      setData({ ...data, tasks: data.tasks.filter((t) => t.id !== id), finishedTasks: data.finishedTasks + 1 });
     }
   };
 
-  const doneCount = data ? data.summary.goals_done : 0;
-  const totalCount = data ? data.summary.goals_total : 0;
+  // Skipped check-ins leave the total entirely, so a rest day never reads as falling short.
+  const skipped = data ? data.occurrences.filter((o) => o.status === 'skipped').length : 0;
+  const doneCount = data ? data.summary.goals_done + data.finishedTasks : 0;
+  const totalCount = data ? data.summary.goals_total - skipped + data.tasks.length + data.finishedTasks : 0;
+
+  // Check-ins come first, then to-dos in the order the backend returns them (oldest due date first).
+  const nextCheckIn = data?.occurrences.find((o) => o.status === 'pending');
+  const nextTask = data?.tasks[0];
+  const next = nextCheckIn
+    ? { title: nextCheckIn.goal.title, meta: 'Goal check-in' }
+    : nextTask
+      ? { title: nextTask.title, meta: `To-do · ${formatDue(nextTask.due_date ?? date, date)}` }
+      : null;
+  const finishNext = () => {
+    if (nextCheckIn) setStatus(nextCheckIn.id, 'done');
+    else if (nextTask) completeTask(nextTask.id);
+  };
+  const hasRows = !!data && data.occurrences.length + data.tasks.length > 0;
 
   return (
     <Screen title={greeting()} subtitle="One small step counts today.">
@@ -50,27 +71,12 @@ export default function TodayScreen() {
 
       {data ? (
         <>
-          <Card
-            tone="mint"
-            // Encouraging message: celebrate when everything is done, never scold when it isn't.
-            title={doneCount > 0 && doneCount === totalCount ? 'You showed up today' : 'Your pace is enough'}
-            description={
-              totalCount === 0
-                ? 'Nothing scheduled today. Rest counts too.'
-                : 'Begin with one meaningful action.'
-            }
-          />
+          <FocusCard done={doneCount} total={totalCount} next={next} disabled={mutation.busy} onDone={finishNext} />
 
-          <View style={styles.header}>
-            <Text style={typography.heading}>{"Today's actions"}</Text>
-            {totalCount > 0 ? (
-              <Text style={styles.pill}>
-                {doneCount} OF {totalCount} COMPLETE
-              </Text>
-            ) : null}
-          </View>
+          {hasRows ? <Text style={[typography.heading, styles.header]}>{"Today's actions"}</Text> : null}
 
-          {data.occurrences.length === 0 && data.tasks.length === 0 ? (
+          {/* Once something's been finished, the Focus card's message says it all. */}
+          {!hasRows && data.finishedTasks === 0 ? (
             <>
               <EmptyState
                 title="Nothing planned for today"
@@ -112,14 +118,5 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm },
-  pill: {
-    ...typography.label,
-    fontSize: 10,
-    backgroundColor: colors.peach,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    overflow: 'hidden',
-  },
+  header: { marginTop: spacing.sm },
 });
