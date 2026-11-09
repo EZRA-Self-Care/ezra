@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing, typography } from '@/constants/theme';
+import { tapFeedback } from '@/lib/haptics';
 
 /** Spinner shown while a screen's data loads for the first time. */
 export function Loading() {
@@ -17,7 +18,12 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
     <View style={[styles.box, { backgroundColor: colors.peach }]}>
       <Text style={typography.body}>{message}</Text>
       {onRetry ? (
-        <Pressable accessibilityRole="button" onPress={onRetry}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            tapFeedback();
+            onRetry();
+          }}>
           <Text style={styles.link}>TRY AGAIN</Text>
         </Pressable>
       ) : null}

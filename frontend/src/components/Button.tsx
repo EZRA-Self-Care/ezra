@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/theme';
+import { tapFeedback } from '@/lib/haptics';
 
 type Props = {
   label: string;
@@ -10,16 +11,22 @@ type Props = {
 };
 
 /**
- * Pill-shaped button from the design. `primary` is the filled green action; `secondary` is the quieter option.
+ * Pill-shaped button from the design. `primary` is the filled main action; `secondary` is the quieter option.
  * Pass `disabled={mutation.busy}` while saving so it can't be pressed twice.
  */
 export function Button({ label, onPress, disabled, variant = 'primary' }: Props) {
   const secondary = variant === 'secondary';
+  const handlePress = () => {
+    if (!onPress) return;
+    tapFeedback();
+    onPress();
+  };
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled }}
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled}
       // Dim while pressed or disabled so the user gets feedback either way.
       style={({ pressed }) => [

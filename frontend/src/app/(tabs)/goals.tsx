@@ -8,6 +8,7 @@ import { Screen } from '@/components/Screen';
 import { EmptyState, ErrorState, Loading } from '@/components/StateView';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { describeDays } from '@/lib/dates';
+import { tapFeedback } from '@/lib/haptics';
 import { useApi } from '@/lib/useApi';
 import type { Goal } from '@/types/models';
 
@@ -34,7 +35,10 @@ export default function GoalsScreen() {
         <Pressable
           key={g.id}
           accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/goals/[id]', params: { id: String(g.id) } })}
+          onPress={() => {
+            tapFeedback();
+            router.push({ pathname: '/goals/[id]', params: { id: String(g.id) } });
+          }}
           style={[styles.card, { backgroundColor: TONES[i % TONES.length] }]}>
           <Text style={typography.heading}>{g.title}</Text>
           {g.description ? <Text style={typography.caption}>{g.description}</Text> : null}

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { formatDue } from '@/lib/dates';
+import { tapFeedback } from '@/lib/haptics';
 import type { Task } from '@/types/models';
 
 type Props = {
@@ -31,7 +32,10 @@ export function TaskCard({ task, today, disabled, onToggle, onPress }: Props) {
       accessibilityRole="button"
       accessibilityLabel={[task.title, task.notes, task.done ? 'Done' : due].filter(Boolean).join(', ')}
       accessibilityHint="Opens the task to edit or delete it"
-      onPress={onPress}
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
       style={({ pressed }) => [styles.card, task.done && styles.done, pressed && styles.pressed]}>
       <View style={styles.header}>
         <Pressable
@@ -40,7 +44,10 @@ export function TaskCard({ task, today, disabled, onToggle, onPress }: Props) {
           accessibilityLabel={`Complete ${task.title}`}
           hitSlop={10}
           disabled={disabled}
-          onPress={onToggle}
+          onPress={() => {
+            tapFeedback();
+            onToggle();
+          }}
           style={[styles.box, task.done && styles.boxChecked]}>
           {task.done ? <Text style={styles.tick}>✓</Text> : null}
         </Pressable>
