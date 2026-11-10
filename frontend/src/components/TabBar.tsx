@@ -79,7 +79,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
         accessibilityLabel={label}
         onPress={onPress}
         style={styles.tab}>
-        <Ionicons name={focused ? active : idle} size={22} color={focused ? colors.primary : colors.textMuted} />
+        <Ionicons name={focused ? active : idle} size={22} color={focused ? colors.primary : colors.text} />
         <Text style={[styles.label, focused && styles.labelActive]}>{label}</Text>
       </Pressable>
     );
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: BAR_HEIGHT,
     borderRadius: radius.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.footer,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.mint,
   },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, height: '100%' },
-  label: { fontSize: 11, fontWeight: '600', color: colors.textMuted },
+  label: { fontSize: 11, fontWeight: '600', color: colors.text },
   labelActive: { color: colors.primary, fontWeight: '700' },
   // Slightly bigger than the bar and lifted, like the round fish button in the design.
   ezra: {
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: colors.mint,
+    borderColor: colors.primary,
     shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 8,

@@ -3,21 +3,22 @@
  * values so every screen stays consistent and the look can change in one place (Sprint 4).
  */
 
-// Palette taken from the EZRA MVP design.
+// Warm EZRA palette used across the app.
 export const colors = {
-  background: '#F7F4EE',
-  surface: '#FFFFFF',
-  surfaceMuted: '#F3EFE6',
-  primary: '#3E7457',
-  primaryText: '#FFFFFF',
-  text: '#1F3A2C',
-  textMuted: '#6B7A70',
-  border: '#E6E1D6',
-  // Card tones: mint for encouragement, peach for gentle attention, sky for progress.
-  mint: '#DDEBDF',
-  peach: '#FBEAE0',
-  sky: '#E3EBF3',
-  danger: '#B4533A',
+  background: '#55402C',
+  surface: '#776352',
+  surfaceMuted: '#776352',
+  primary: '#F7DDC7',
+  primaryText: '#55402C',
+  text: '#FFFFFF',
+  textMuted: '#F7DDC7',
+  border: '#F7DDC7',
+  footer: '#242424',
+  // Keep every card tone within the same taupe family.
+  mint: '#776352',
+  peach: '#776352',
+  sky: '#776352',
+  danger: '#A74934',
 } as const;
 
 /** Spacing scale in points, used for padding, margins and gaps. */

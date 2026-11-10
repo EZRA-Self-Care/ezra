@@ -81,7 +81,7 @@ export function QuickActions({ open, onClose, bottom }: Props) {
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(31, 58, 44, 0.35)' },
+  scrim: { flex: 1, backgroundColor: 'rgba(36, 36, 36, 0.45)' },
   column: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: spacing.sm },
   action: {
     flexDirection: 'row',

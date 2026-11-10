@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { ErrorState, Loading } from '@/components/StateView';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { describeDays } from '@/lib/dates';
+import { successFeedback } from '@/lib/haptics';
 import { goBack } from '@/lib/navigation';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Goal, Revision } from '@/types/models';
@@ -92,6 +93,7 @@ function GoalEditor({ goal, onSaved }: { goal: Goal; onSaved: () => void }) {
       }),
     );
     if (saved) {
+      successFeedback();
       // Clear the note and reload, so the new revision appears in History.
       setNote('');
       onSaved();
@@ -101,7 +103,10 @@ function GoalEditor({ goal, onSaved }: { goal: Goal; onSaved: () => void }) {
   // Pausing hides the goal from Today and Goals without deleting its history.
   const archive = async () => {
     const saved = await mutation.run(() => api.goals.update(goalId, { archived: true }));
-    if (saved) goBack('/goals');
+    if (saved) {
+      successFeedback();
+      goBack('/goals');
+    }
   };
 
   return (
