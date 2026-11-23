@@ -1,19 +1,27 @@
-// Palette taken from the EZRA MVP design.
+/**
+ * Design tokens from the EZRA MVP Figma design. Use these instead of hard-coded
+ * values so every screen stays consistent and the look can change in one place (Sprint 4).
+ */
+
+// Warm EZRA palette used across the app.
 export const colors = {
-  background: '#F7F4EE',
-  surface: '#FFFFFF',
-  surfaceMuted: '#F3EFE6',
-  primary: '#3E7457',
-  primaryText: '#FFFFFF',
-  text: '#1F3A2C',
-  textMuted: '#6B7A70',
-  border: '#E6E1D6',
-  mint: '#DDEBDF',
-  peach: '#FBEAE0',
-  sky: '#E3EBF3',
-  danger: '#B4533A',
+  background: '#55402C',
+  surface: '#776352',
+  surfaceMuted: '#776352',
+  primary: '#F7DDC7',
+  primaryText: '#55402C',
+  text: '#FFFFFF',
+  textMuted: '#F7DDC7',
+  border: '#F7DDC7',
+  footer: '#242424',
+  // Keep every card tone within the same taupe family.
+  mint: '#776352',
+  peach: '#776352',
+  sky: '#776352',
+  danger: '#A74934',
 } as const;
 
+/** Spacing scale in points, used for padding, margins and gaps. */
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -22,12 +30,14 @@ export const spacing = {
   xl: 24,
 } as const;
 
+/** Corner radii. `pill` makes fully rounded buttons and chips. */
 export const radius = {
   sm: 8,
   md: 12,
   pill: 999,
 } as const;
 
+/** Text styles. Spread them into a style, e.g. `{ ...typography.body, fontWeight: '600' }`. */
 export const typography = {
   title: { fontSize: 24, fontWeight: '700', color: colors.text },
   subtitle: { fontSize: 14, color: colors.textMuted },

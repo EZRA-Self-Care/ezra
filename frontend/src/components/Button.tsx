@@ -1,21 +1,40 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/theme';
+import { tapFeedback } from '@/lib/haptics';
 
 type Props = {
   label: string;
   onPress?: () => void;
   disabled?: boolean;
+  variant?: 'primary' | 'secondary';
 };
 
-export function Button({ label, onPress, disabled }: Props) {
+/**
+ * Pill-shaped button from the design. `primary` is the filled main action; `secondary` is the quieter option.
+ * Pass `disabled={mutation.busy}` while saving so it can't be pressed twice.
+ */
+export function Button({ label, onPress, disabled, variant = 'primary' }: Props) {
+  const secondary = variant === 'secondary';
+  const handlePress = () => {
+    if (!onPress) return;
+    tapFeedback();
+    onPress();
+  };
+
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      accessibilityState={{ disabled }}
+      onPress={handlePress}
       disabled={disabled}
-      style={({ pressed }) => [styles.button, (pressed || disabled) && styles.dimmed]}>
-      <Text style={styles.label}>{label.toUpperCase()}</Text>
+      // Dim while pressed or disabled so the user gets feedback either way.
+      style={({ pressed }) => [
+        styles.button,
+        secondary && styles.secondary,
+        (pressed || disabled) && styles.dimmed,
+      ]}>
+      <Text style={[styles.label, secondary && styles.secondaryLabel]}>{label.toUpperCase()}</Text>
     </Pressable>
   );
 }
@@ -27,6 +46,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     alignItems: 'center',
   },
+  secondary: { backgroundColor: colors.surfaceMuted },
   dimmed: { opacity: 0.6 },
   label: { color: colors.primaryText, fontWeight: '700', fontSize: 12, letterSpacing: 0.5 },
+  secondaryLabel: { color: colors.primary },
 });
