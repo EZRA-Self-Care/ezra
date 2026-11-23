@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing, typography } from '@/constants/theme';
+import { tapFeedback } from '@/lib/haptics';
 
 type Props = {
   title: string;
@@ -28,16 +29,33 @@ export function CheckRow({ title, meta, checked, muted, disabled, onToggle, onPr
         // hitSlop enlarges the tap target beyond the small 22px box.
         hitSlop={8}
         disabled={disabled}
-        onPress={onToggle}
+        onPress={() => {
+          tapFeedback();
+          onToggle();
+        }}
         style={[styles.box, checked && styles.boxChecked]}>
         {checked ? <Text style={styles.tick}>✓</Text> : null}
       </Pressable>
-      <Pressable style={styles.text} onPress={onPress} disabled={!onPress}>
+      <Pressable
+        style={styles.text}
+        disabled={!onPress}
+        onPress={() => {
+          if (!onPress) return;
+          tapFeedback();
+          onPress();
+        }}>
         <Text style={[styles.title, checked && styles.titleDone]}>{title}</Text>
         {meta ? <Text style={typography.caption}>{meta}</Text> : null}
       </Pressable>
       {actionLabel && onAction ? (
-        <Pressable accessibilityRole="button" hitSlop={8} disabled={disabled} onPress={onAction}>
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={8}
+          disabled={disabled}
+          onPress={() => {
+            tapFeedback();
+            onAction();
+          }}>
           <Text style={typography.label}>{actionLabel.toUpperCase()}</Text>
         </Pressable>
       ) : null}

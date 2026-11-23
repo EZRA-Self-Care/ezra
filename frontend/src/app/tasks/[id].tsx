@@ -8,6 +8,7 @@ import { Field, FieldGroup } from '@/components/Field';
 import { Screen } from '@/components/Screen';
 import { ErrorState, Loading } from '@/components/StateView';
 import { addDays, formatDue, localDate } from '@/lib/dates';
+import { successFeedback } from '@/lib/haptics';
 import { goBack } from '@/lib/navigation';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Goal, Task } from '@/types/models';
@@ -66,7 +67,10 @@ function TaskForm({ task, goals, today }: FormProps) {
     }
     const body = { title, notes, due_date: due, goal_id: goal };
     const saved = await mutation.run(() => api.tasks.update(task.id, body));
-    if (saved) goBack('/lists');
+    if (saved) {
+      successFeedback();
+      goBack('/lists');
+    }
   };
 
   const remove = async () => {
@@ -75,7 +79,10 @@ function TaskForm({ task, goals, today }: FormProps) {
       await api.tasks.remove(task.id);
       return true;
     });
-    if (ok) goBack('/lists');
+    if (ok) {
+      successFeedback();
+      goBack('/lists');
+    }
   };
 
   return (

@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ErrorState } from '@/components/StateView';
 import { colors, radius, spacing, typography } from '@/constants/theme';
+import { successFeedback } from '@/lib/haptics';
 import { goBack } from '@/lib/navigation';
 import { useMutation } from '@/lib/useApi';
 
@@ -29,7 +30,10 @@ export default function NewTaskScreen() {
         goal_id: goalId ? Number(goalId) : null,
       }),
     );
-    if (saved) goBack('/lists');
+    if (saved) {
+      successFeedback();
+      goBack('/lists');
+    }
   }
 
   return (

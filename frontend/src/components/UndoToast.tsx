@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/theme';
+import { tapFeedback } from '@/lib/haptics';
 
 type Props = {
   message: string;
@@ -28,6 +29,7 @@ export function UndoToast({ message, onUndo, onDismiss }: Props) {
         accessibilityRole="button"
         hitSlop={10}
         onPress={() => {
+          tapFeedback();
           onUndo();
           onDismiss();
         }}>
@@ -47,11 +49,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
-    backgroundColor: colors.text,
+    backgroundColor: colors.footer,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
-  message: { color: colors.primaryText, fontSize: 14, flexShrink: 1 },
-  undo: { color: colors.mint, fontWeight: '700', fontSize: 13, letterSpacing: 0.5 },
+  message: { color: colors.text, fontSize: 14, flexShrink: 1 },
+  undo: { color: colors.primary, fontWeight: '700', fontSize: 13, letterSpacing: 0.5 },
 });

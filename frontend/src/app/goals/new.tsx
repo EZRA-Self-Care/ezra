@@ -7,6 +7,7 @@ import { GoalForm, type GoalDraft } from '@/components/GoalForm';
 import { Screen } from '@/components/Screen';
 import { ErrorState } from '@/components/StateView';
 import { localDate } from '@/lib/dates';
+import { successFeedback } from '@/lib/haptics';
 import { goBack } from '@/lib/navigation';
 import { useMutation } from '@/lib/useApi';
 
@@ -36,7 +37,10 @@ export default function NewGoalScreen() {
       }
       return goal;
     });
-    if (saved) goBack('/goals');
+    if (saved) {
+      successFeedback();
+      goBack('/goals');
+    }
   };
 
   return (

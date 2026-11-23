@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/theme';
+import { tapFeedback } from '@/lib/haptics';
 
 type Option<T> = { label: string; value: T };
 
@@ -25,7 +26,10 @@ export function Chips<T>({ options, isSelected, onPress }: Props<T>) {
             key={o.label}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            onPress={() => onPress(o.value)}
+            onPress={() => {
+              tapFeedback();
+              onPress(o.value);
+            }}
             style={[styles.chip, selected && styles.chipSelected]}>
             <Text style={[styles.label, selected && styles.labelSelected]}>{o.label}</Text>
           </Pressable>

@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors } from '@/constants/theme';
+import { tapFeedback } from '@/lib/haptics';
 import { goBack } from '@/lib/navigation';
 
 function CloseButton() {
@@ -11,7 +12,10 @@ function CloseButton() {
       accessibilityLabel="Close add task"
       accessibilityRole="button"
       hitSlop={12}
-      onPress={() => goBack('/lists')}
+      onPress={() => {
+        tapFeedback();
+        goBack('/lists');
+      }}
       style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}>
       <Text style={styles.closeButtonText}>×</Text>
     </Pressable>
@@ -25,7 +29,7 @@ function CloseButton() {
 export default function RootLayout() {
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },

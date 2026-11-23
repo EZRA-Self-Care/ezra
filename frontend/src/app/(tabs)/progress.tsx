@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, Loading } from '@/components/StateView';
 import { WeekBars } from '@/components/WeekBars';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { addDays, localDate } from '@/lib/dates';
+import { tapFeedback } from '@/lib/haptics';
 import { useApi, useMutation } from '@/lib/useApi';
 import type { Progress, Today } from '@/types/models';
 
@@ -74,13 +75,29 @@ export default function ProgressScreen() {
                   title={o.goal.title}
                   description="Missed yesterday. No streak penalty. Choose your next step.">
                   <View style={styles.actions}>
-                    <Pressable accessibilityRole="button" disabled={mutation.busy} onPress={() => letItRest(o.id)}>
+                    <Pressable
+                      accessibilityRole="button"
+                      disabled={mutation.busy}
+                      onPress={() => {
+                        tapFeedback();
+                        void letItRest(o.id);
+                      }}>
                       <Text style={typography.label}>LET IT REST</Text>
                     </Pressable>
-                    <Pressable accessibilityRole="button" onPress={() => router.navigate('/')}>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => {
+                        tapFeedback();
+                        router.navigate('/');
+                      }}>
                       <Text style={typography.label}>TRY TODAY</Text>
                     </Pressable>
-                    <Pressable accessibilityRole="button" onPress={() => openGoal(o.goal_id)}>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => {
+                        tapFeedback();
+                        openGoal(o.goal_id);
+                      }}>
                       <Text style={typography.label}>ADJUST PLAN</Text>
                     </Pressable>
                   </View>
@@ -94,7 +111,12 @@ export default function ProgressScreen() {
               <Text style={typography.heading}>What feels manageable now?</Text>
               {progress.recovery.map((r) => (
                 <Card key={r.goal_id} title={r.title} description={r.suggestion}>
-                  <Pressable accessibilityRole="button" onPress={() => openGoal(r.goal_id)}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      tapFeedback();
+                      openGoal(r.goal_id);
+                    }}>
                     <Text style={[typography.label, styles.cta]}>MAKE IT SMALLER</Text>
                   </Pressable>
                 </Card>
@@ -111,7 +133,10 @@ export default function ProgressScreen() {
               <Pressable
                 key={g.goal_id}
                 accessibilityRole="button"
-                onPress={() => openGoal(g.goal_id)}
+                onPress={() => {
+                  tapFeedback();
+                  openGoal(g.goal_id);
+                }}
                 style={[styles.goal, { backgroundColor: TONES[i % TONES.length] }]}>
                 <Text style={typography.heading}>{g.title}</Text>
                 <Text style={typography.caption}>
