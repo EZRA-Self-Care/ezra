@@ -11,27 +11,57 @@ import { colors, radius, spacing, typography } from '@/constants/theme';
 import { addDays, localDate } from '@/lib/dates';
 import { tapFeedback } from '@/lib/haptics';
 import { useApi, useMutation } from '@/lib/useApi';
-import type { Progress, Today } from '@/types/models';
+import type { Progress, Task, Today } from '@/types/models';
 
 const TONES = [colors.surfaceMuted, colors.peach, colors.mint];
+
+/** "1 check-in", "3 to-dos". */
+const count = (n: number, word: string) => `${n} ${n === 1 ? word : `${word}s`}`;
 
 /**
  * UI-04: Progress and recovery.
  * Loads the last 7 days of progress, plus yesterday's check-ins to find any that were missed.
  * Missed ones get a "Plans can change" card instead of a broken streak.
+ * Sprint 5: the weekly total now includes finished to-dos (so it agrees with the Today card) and
+ * spells out what it's made of, per product owner feedback that weekly progress was hard to read.
  */
 export default function ProgressScreen() {
   const today = useMemo(() => localDate(), []);
   const yesterday = addDays(today, -1);
   const load = useCallback(
-    // Both requests run in parallel. Calling /today for yesterday also creates any check-ins the app never loaded.
-    () => Promise.all([api.progress(today, 7), api.today(yesterday)]),
+    // All requests run in parallel. Calling /today for yesterday also creates any check-ins the app never loaded.
+    () => Promise.all([api.progress(today, 7), api.today(yesterday), api.tasks.list()]),
     [today, yesterday],
   );
-  const { data, error, loading, reload } = useApi<[Progress, Today]>(load);
+  const { data, error, loading, reload } = useApi<[Progress, Today, Task[]]>(load);
   const mutation = useMutation();
 
   const progress = data?.[0];
+
+  // /api/progress only counts goal check-ins. Add the to-dos finished on each day, so the week
+  // matches the Today card, which counts both.
+  const week = useMemo(() => {
+    if (!data) return null;
+    const [p, , tasks] = data;
+    const todosByDay: Record<string, number> = {};
+    for (const t of tasks) {
+      if (!t.completed_at) continue;
+      const day = localDate(new Date(t.completed_at));
+      todosByDay[day] = (todosByDay[day] ?? 0) + 1;
+    }
+    const days = p.per_day.map((d) => ({
+      date: d.date,
+      done: d.done + (todosByDay[d.date] ?? 0),
+    }));
+    const todos = p.per_day.reduce((n, d) => n + (todosByDay[d.date] ?? 0), 0);
+    return {
+      days,
+      checkIns: p.total_done,
+      todos,
+      total: p.total_done + todos,
+      activeDays: days.filter((d) => d.done > 0).length,
+    };
+  }, [data]);
   // Check-ins from yesterday that were neither done nor skipped.
   const missed = data?.[1].occurrences.filter((o) => o.status === 'pending') ?? [];
 
@@ -49,19 +79,22 @@ export default function ProgressScreen() {
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {mutation.error ? <ErrorState message={mutation.error} /> : null}
 
-      {progress ? (
+      {progress && week ? (
         <>
           <View style={[styles.hero, { backgroundColor: colors.sky }]}>
-            <Text style={typography.label}>THIS WEEK</Text>
-            <Text style={typography.title}>
-              {progress.total_done} {progress.total_done === 1 ? 'action' : 'actions'} completed
+            {/* "Last 7 days", not "this week": the chart is a rolling window ending today. */}
+            <Text style={typography.label}>LAST 7 DAYS</Text>
+            <Text style={typography.title}>{count(week.total, 'action')} completed</Text>
+            {/* What the total is made of, and how many days had something, never a streak. */}
+            <Text style={styles.breakdown}>
+              {count(week.checkIns, 'check-in')} · {count(week.todos, 'to-do')} · active {week.activeDays} of 7 days
             </Text>
             <Text style={typography.caption}>
-              {progress.total_done > 0
+              {week.total > 0
                 ? 'Every return counts, including the ones after a hard day.'
                 : 'A fresh week. One small step is enough to begin.'}
             </Text>
-            <WeekBars days={progress.per_day} />
+            <WeekBars days={week.days} today={today} />
           </View>
 
           {missed.length > 0 ? (
@@ -129,23 +162,31 @@ export default function ProgressScreen() {
             {progress.goals.length === 0 ? (
               <EmptyState title="No goals yet" description="Progress shows up here once you create a goal." />
             ) : null}
-            {progress.goals.map((g, i) => (
-              <Pressable
-                key={g.goal_id}
-                accessibilityRole="button"
-                onPress={() => {
-                  tapFeedback();
-                  openGoal(g.goal_id);
-                }}
-                style={[styles.goal, { backgroundColor: TONES[i % TONES.length] }]}>
-                <Text style={typography.heading}>{g.title}</Text>
-                <Text style={typography.caption}>
-                  {/* Rest days are subtracted from the planned total, so they never count as misses. */}
-                  {g.done} / {g.scheduled - g.skipped} planned actions
-                  {g.skipped > 0 ? ` · ${g.skipped} rest ${g.skipped === 1 ? 'day' : 'days'}` : ''}
-                </Text>
-              </Pressable>
-            ))}
+            {progress.goals.map((g, i) => {
+              // Rest days are subtracted from the planned total, so they never count as misses.
+              const planned = g.scheduled - g.skipped;
+              const share = planned > 0 ? Math.min(1, g.done / planned) : 0;
+              return (
+                <Pressable
+                  key={g.goal_id}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    tapFeedback();
+                    openGoal(g.goal_id);
+                  }}
+                  style={[styles.goal, { backgroundColor: TONES[i % TONES.length] }]}>
+                  <Text style={typography.heading}>{g.title}</Text>
+                  <Text style={typography.caption}>
+                    {g.done} of {count(planned, 'check-in')} done
+                    {g.skipped > 0 ? ` · ${count(g.skipped, 'rest day')}` : ''}
+                  </Text>
+                  {/* A simple bar reads faster than the numbers alone. */}
+                  <View style={styles.goalTrack}>
+                    <View style={[styles.goalFill, { width: `${share * 100}%` }]} />
+                  </View>
+                </Pressable>
+              );
+            })}
             <Text style={typography.caption}>Rest days are not counted against you.</Text>
           </View>
         </>
@@ -160,4 +201,17 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.sm },
   cta: { marginTop: spacing.sm },
   goal: { borderRadius: radius.md, padding: spacing.lg, gap: spacing.xs },
+  breakdown: { ...typography.body, fontWeight: '600' },
+  goalTrack: {
+    height: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.background,
+    overflow: 'hidden',
+    marginTop: spacing.xs,
+  },
+  goalFill: {
+    height: '100%',
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
 });

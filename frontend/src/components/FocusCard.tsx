@@ -2,12 +2,13 @@
  * Sprint 4 UX feature 3: the "Today's Focus" card at the top of Today. A progress ring, the one next
  * thing to do with a Done button right on the card, and a calm message once the day is finished.
  * Deliberately no streaks: EZRA encourages, it never counts what was missed.
+ * Sprint 5: restyled as the brightest thing on the screen (light card, dark text) so the next action
+ * is the first thing people notice, per product owner feedback.
  */
 import { useEffect, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { Button } from '@/components/Button';
 import { EzraMark } from '@/components/EzraMark';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { successFeedback } from '@/lib/haptics';
@@ -53,22 +54,19 @@ export function FocusCard({ done, total, next, disabled, onDone }: Props) {
     <View style={styles.card}>
       {/* Decoration only, echoing the fish button in the tab bar. */}
       <View style={styles.watermark} pointerEvents="none" aria-hidden>
-        <EzraMark size={120} color={colors.mint} />
+        <EzraMark size={120} color={colors.primaryText} />
       </View>
 
       <View style={styles.row}>
         {total > 0 ? (
-          <View
-            style={styles.ring}
-            accessibilityRole="image"
-            accessibilityLabel={`${done} of ${total} done today`}>
+          <View style={styles.ring} accessibilityRole="image" accessibilityLabel={`${done} of ${total} done today`}>
             <Svg width={RING_SIZE} height={RING_SIZE}>
               <Circle
                 cx={RING_CENTRE}
                 cy={RING_CENTRE}
                 r={RING_RADIUS}
-                stroke={colors.mint}
-                strokeOpacity={0.25}
+                stroke={colors.primaryText}
+                strokeOpacity={0.15}
                 strokeWidth={RING_WIDTH}
                 fill="none"
               />
@@ -76,7 +74,7 @@ export function FocusCard({ done, total, next, disabled, onDone }: Props) {
                 cx={RING_CENTRE}
                 cy={RING_CENTRE}
                 r={RING_RADIUS}
-                stroke={colors.mint}
+                stroke={colors.primaryText}
                 strokeWidth={RING_WIDTH}
                 strokeLinecap="round"
                 strokeDasharray={RING_LENGTH}
@@ -94,7 +92,8 @@ export function FocusCard({ done, total, next, disabled, onDone }: Props) {
         ) : null}
 
         <View style={styles.text}>
-          <Text style={styles.label}>{"TODAY'S FOCUS"}</Text>
+          {/* Say plainly what to do next, so it's obvious the moment the app opens. */}
+          <Text style={styles.label}>{next ? 'NEXT UP FOR TODAY' : "TODAY'S FOCUS"}</Text>
           {next ? (
             <>
               <Text style={styles.title} numberOfLines={2}>
@@ -115,15 +114,20 @@ export function FocusCard({ done, total, next, disabled, onDone }: Props) {
       </View>
 
       {next ? (
-        <Button
-          label="Done"
-          variant="secondary"
+        // Its own button rather than <Button>: it needs the dark-on-light colours of this card, and
+        // <Button> plays a tap haptic too, which would double up with the success buzz.
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Mark ${next.title} done`}
+          accessibilityState={{ disabled }}
           disabled={disabled}
           onPress={() => {
             successFeedback();
             onDone();
           }}
-        />
+          style={({ pressed }) => [styles.done, (pressed || disabled) && styles.dimmed]}>
+          <Text style={styles.doneLabel}>DONE</Text>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -137,20 +141,44 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     overflow: 'hidden',
   },
-  watermark: { position: 'absolute', right: -spacing.xl, top: -spacing.lg, opacity: 0.12 },
+  watermark: {
+    position: 'absolute',
+    right: -spacing.xl,
+    top: -spacing.lg,
+    opacity: 0.08,
+  },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  ring: { width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center' },
+  ring: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   // Laid over the SVG, centred in the ring.
   ringText: {
     ...StyleSheet.absoluteFill,
     color: colors.primaryText,
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 16,
     lineHeight: RING_SIZE,
     textAlign: 'center',
   },
   text: { flex: 1, gap: spacing.xs },
-  label: { ...typography.label, color: colors.mint },
-  title: { fontSize: 18, fontWeight: '700', color: colors.primaryText },
-  meta: { fontSize: 13, color: colors.mint },
+  label: { ...typography.label, color: colors.primaryText },
+  title: { fontSize: 20, fontWeight: '800', color: colors.primaryText },
+  meta: { fontSize: 13, fontWeight: '600', color: colors.primaryText },
+  // Inverted from the card (dark pill, light text) so the one action on it stands out.
+  done: {
+    backgroundColor: colors.primaryText,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  dimmed: { opacity: 0.6 },
+  doneLabel: {
+    color: colors.primary,
+    fontWeight: '800',
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
 });
