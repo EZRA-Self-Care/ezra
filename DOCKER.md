@@ -1,6 +1,6 @@
 # Docker
 
-This file, `docker-compose.yml` and `.env.example` sit in the repo root, next to `backend/` and `frontend/`.
+This file, `docker-compose.yml`, and `.env.example` are in the repository root. The `backend/` and `frontend/` folders are also in this folder.
 
 ## What each container is
 
@@ -10,30 +10,30 @@ This file, `docker-compose.yml` and `.env.example` sit in the repo root, next to
 | `web` | `frontend/Dockerfile` → `web` | Static Expo **web** export served by nginx, port 8080 |
 | `metro` | `frontend/Dockerfile` → `dev` | Metro dev server for Expo Go, port 8081 (opt-in profile) |
 
-Docker does not run the iOS/Android app. For phones you either use Expo Go against `metro`, or build native binaries with EAS.
+Docker does not run the iOS or Android app. To test on a phone, use Expo Go with the `metro` service. You can also use EAS to build a native app.
 
-## Use (Individual Commands, use as needed)
+## Run the services
 
 ```bash
-cp .env.example .env             # then edit LAN_IP if you'll use a phone
+cp .env.example .env             # Edit LAN_IP if you will use a phone.
 
-# Backend alone
-docker build -t backend backend && docker run -p 5000:5000 -v ezra-data:/data backend 
+# Build and run the backend alone.
+docker build -t backend backend && docker run -p 5000:5000 -v ezra-data:/data backend
 
-# backend + web   -> http://localhost:8080
+# Start the backend and web app. Open http://localhost:8080.
 docker compose up --build
 
-# backend + Metro for Expo Go (scan the QR code)
-docker compose --profile dev up --build metro   
+# Start the backend and Metro for Expo Go. Scan the QR code.
+docker compose --profile dev up --build metro
 
-# stop; add -v to also delete the database and cached node_modules
-docker compose down              
+# Stop the services. Add -v to delete the database and cached node_modules.
+docker compose down
 ```
 
-## Current Deficiencies...
+## Configuration and limits
 
-- **API URL is baked into the web image.** Changing `WEB_API_URL` requires `docker compose build web`.
-- **Metro dependencies live in a named volume.** The Metro container checks `package.json` and `package-lock.json` at startup and runs `npm ci` when either changes. Rebuild/recreate Metro with `docker compose --profile dev up --build --force-recreate metro`; this preserves the database volume.
-- **Assumed env var name:** the frontend must read `process.env.EXPO_PUBLIC_API_URL`. If `src/api/client.ts` uses a different name, change it in the Dockerfile and compose file.
-- **Single gunicorn worker** is deliberate (SQLite + `create_all()` at startup).
-- No TLS and no auth. Not for the public internet as-is.
+- The web image includes the API URL at build time. If you change `WEB_API_URL`, rebuild the web image with `docker compose build web`.
+- Metro dependencies are stored in a named volume. At startup, Metro checks `package.json` and `package-lock.json`. It runs `npm ci` if either file changed. To rebuild and recreate Metro, run `docker compose --profile dev up --build --force-recreate metro`. This command keeps the database volume.
+- The frontend reads `process.env.EXPO_PUBLIC_API_URL`. If you change this name in `src/api/client.ts`, update the Dockerfile and Compose file.
+- Gunicorn uses one worker. SQLite and startup table creation require this configuration.
+- The services do not use TLS or authentication. Do not expose this setup to the public internet.

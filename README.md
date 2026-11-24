@@ -1,6 +1,6 @@
 # EZRA
 
-A steadier way to care for yourself: daily encouragement, goals, practical to-do lists and a path forward after a missed day.
+EZRA helps you set goals, manage tasks, and review your progress. The app supports steady progress after a missed day.
 
 | Folder                   | Stack                        |
 | ------------------------ | ---------------------------- |
@@ -8,9 +8,8 @@ A steadier way to care for yourself: daily encouragement, goals, practical to-do
 | [`backend/`](backend/)   | Python Flask API             |
 
 
-How to run (recommended):  [`Docker`](DOCKER.md)   
+For the recommended local setup, use [Docker](DOCKER.md).
 
+See the README file in each folder for setup instructions.
 
-See each folder's README for setup.
-
-For the architecture, request flow, data model, and pointers to common code changes, see the [codebase guide](CODEBASE.md).
+See the [codebase guide](CODEBASE.md) for the architecture, request flow, data model, and common code changes.

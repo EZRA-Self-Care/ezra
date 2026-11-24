@@ -1,6 +1,6 @@
 # EZRA codebase guide
 
-EZRA is a self-care app built around goals, practical tasks, and progress without streaks. The repository has an Expo / React Native frontend, a Flask JSON API, and Docker Compose files for running the services together.
+EZRA is a self-care app. It has goals, tasks, and progress without streaks. The repository contains an Expo and React Native frontend, a Flask JSON API, and Docker Compose files for the services.
 
 ## Repository map
 
@@ -19,16 +19,16 @@ EZRA is a self-care app built around goals, practical tasks, and progress withou
 | `backend/tests/` | Flask API tests |
 | `docker-compose.yml`, `DOCKER.md` | Combined services and Docker workflows |
 
-For install and run commands, see the [root README](README.md), [frontend setup](frontend/README.md), [backend setup](backend/README.md), and [Docker guide](DOCKER.md). Frontend dependency changes are covered in [frontend/DEPENDENCIES.md](frontend/DEPENDENCIES.md).
+For setup commands, see the [root README](README.md), [frontend guide](frontend/README.md), [backend guide](backend/README.md), and [Docker guide](DOCKER.md). See [frontend/DEPENDENCIES.md](frontend/DEPENDENCIES.md) to change frontend dependencies.
 
 ## How a request moves through the app
 
-1. A file under `frontend/src/app/` renders a route. Tab screens use `useApi` to load on focus and `useMutation` to avoid duplicate writes while a request is in flight.
-2. The screen calls a method from `frontend/src/api/client.ts`. That client adds `/api`, serializes JSON, handles `204 No Content`, and turns network or API errors into readable messages.
-3. Flask registers resource blueprints in `backend/app/__init__.py`. Route handlers validate request data, read or update SQLAlchemy models, and return JSON.
-4. Model `to_dict()` methods shape the API response. The matching TypeScript definitions are in `frontend/src/types/models.ts`.
+1. A file under `frontend/src/app/` renders a route. Tab screens use `useApi` to load data when the screen gains focus. They use `useMutation` to prevent duplicate writes while a request runs.
+2. The screen calls a method in `frontend/src/api/client.ts`. The client adds `/api`, encodes JSON, handles `204 No Content`, and formats network and API errors.
+3. Flask registers resource blueprints in `backend/app/__init__.py`. Route handlers validate requests. They read or update SQLAlchemy models and return JSON.
+4. Model `to_dict()` methods define the API response shape. Matching TypeScript types are in `frontend/src/types/models.ts`.
 
-Keep endpoint paths and JSON field names synchronized across the route, API client, and TypeScript model. API JSON uses `snake_case`; React component props use normal TypeScript conventions.
+Keep endpoint paths and JSON field names in sync across the route, API client, and TypeScript model. API JSON uses `snake_case`. React component props use TypeScript naming conventions.
 
 ## Frontend routes
 
@@ -43,64 +43,64 @@ Keep endpoint paths and JSON field names synchronized across the route, API clie
 | `frontend/src/app/tasks/new.tsx` | Create a task, optionally attached to a goal |
 | `frontend/src/app/tasks/[id].tsx` | Edit, complete, or delete a task |
 
-`frontend/src/app/_layout.tsx` defines the root stack. `frontend/src/app/(tabs)/_layout.tsx` defines the four tabs and supplies the custom `TabBar`. Shared UI belongs in `frontend/src/components/`; keep route screens inside `src/app/` because Expo Router treats files there as routes.
+`frontend/src/app/_layout.tsx` defines the root stack. `frontend/src/app/(tabs)/_layout.tsx` defines the four tabs and uses the custom `TabBar`. Put shared UI in `frontend/src/components/`. Put route screens in `src/app/`. Expo Router treats files in this folder as routes.
 
 ## Component catalog
 
-Components live in `frontend/src/components/`. Most are presentational: screens own data fetching and mutations, then pass values and callbacks down.
+Components are in `frontend/src/components/`. Most components display data and call callbacks. Screens load data and make changes, then pass values and callbacks to components.
 
 | Component | Purpose and main props |
 | --- | --- |
-| `Screen` | Safe-area, scrollable page shell; `title`, optional `subtitle`, and `children`. |
-| `Button` | Primary or secondary pill action; `label`, optional `onPress`, `disabled`, and `variant`. |
-| `Card` | Content container; `title`, optional `description`, `tone` (`default`, `mint`, `peach`, `sky`), and `children`. |
-| `Field` | Labelled React Native `TextInput`; accepts the normal `TextInput` props plus `label`. `FieldGroup` labels custom controls such as `Chips`. |
-| `Chips` | Generic selectable pill row; `options`, `isSelected(value)`, and `onPress(value)`. Selection stays controlled by the parent. |
-| `CheckRow` | Goal/checklist row with checkbox and optional text/action callbacks; supports `checked`, `muted`, and `disabled`. |
-| `TaskCard` | Task summary with due-date wording and completion checkbox; receives `task`, local `today`, `onToggle`, and `onPress`. |
-| `SwipeableTask` | Gesture wrapper for a task row; `children`, `rightLabel`, `onSwipeRight`, optional `onSwipeLeft`, and `disabled`. |
-| `FocusCard` | Today’s next action and animated completion ring; `done`, `total`, optional `next`, `onDone`, and `disabled`. |
-| `GoalForm` | Shared create/edit form; controlled `draft` (`title`, `description`, `days`) and `onChange`. Weekdays use `0` for Monday through `6` for Sunday; an empty `days` list means every day. |
-| `QuickActions` | Animated shortcut menu; controlled with `open`, `onClose`, and `bottom` offset. |
-| `TabBar` | Custom five-slot tab bar with the centre EZRA quick-action button; receives the Expo Router tab-bar props from the tabs layout. |
-| `EzraMark` | SVG fish mark; `color` and optional `size`. |
-| `WeekBars` | Per-day completion bars; `days` (`date`, `done`) and optional local `today` label. |
-| `UndoToast` | Four-second undo message; `message`, `onUndo`, and `onDismiss`. |
-| `Loading`, `ErrorState`, `EmptyState` | Shared request/list states. `ErrorState` takes `message` and optional `onRetry`; `EmptyState` takes `title` and optional `description`. |
+| `Screen` | Provides a safe-area, scrollable page. Set `title`, optional `subtitle`, and `children`. |
+| `Button` | Shows a primary or secondary pill action. Set `label`, optional `onPress`, `disabled`, and `variant`. |
+| `Card` | Groups content. Set `title`, optional `description`, `tone` (`default`, `mint`, `peach`, `sky`), and `children`. |
+| `Field` | Shows a labelled React Native `TextInput`. It accepts `TextInput` props and `label`. `FieldGroup` labels custom controls such as `Chips`. |
+| `Chips` | Shows selectable pills. Pass `options`, `isSelected(value)`, and `onPress(value)`. The parent controls the selection. |
+| `CheckRow` | Shows a goal or checklist row with a checkbox. It supports `checked`, `muted`, `disabled`, and optional text and action callbacks. |
+| `TaskCard` | Shows a task, due-date text, and completion checkbox. Pass `task`, local `today`, `onToggle`, and `onPress`. |
+| `SwipeableTask` | Adds swipe actions to a task row. Pass `children`, `rightLabel`, `onSwipeRight`, optional `onSwipeLeft`, and `disabled`. |
+| `FocusCard` | Shows today's next action and an animated completion ring. Pass `done`, `total`, optional `next`, `onDone`, and `disabled`. |
+| `GoalForm` | Provides a shared create and edit form. Pass controlled `draft` (`title`, `description`, `days`) and `onChange`. Weekday `0` is Monday; weekday `6` is Sunday. An empty `days` list means every day. |
+| `QuickActions` | Shows an animated shortcut menu. Control it with `open`, `onClose`, and the `bottom` offset. |
+| `TabBar` | Shows five tab slots and a centre EZRA quick-action button. The tabs layout passes Expo Router tab-bar props. |
+| `EzraMark` | Shows the EZRA fish mark as an SVG. Set `color` and optional `size`. |
+| `WeekBars` | Shows completion bars for each day. Pass `days` (`date`, `done`) and optional local `today` label. |
+| `UndoToast` | Shows an undo message for four seconds. Pass `message`, `onUndo`, and `onDismiss`. |
+| `Loading`, `ErrorState`, `EmptyState` | Show request and list states. `ErrorState` takes `message` and optional `onRetry`. `EmptyState` takes `title` and optional `description`. |
 
-Use `frontend/src/constants/theme.ts` for shared visual tokens. Interactive components generally trigger haptics and expose accessibility roles; keep those behaviors when reusing or changing them.
+Use `frontend/src/constants/theme.ts` for shared colors, spacing, and text styles. Interactive components can trigger haptics and expose accessibility roles. Keep these behaviors when you reuse or change a component.
 
 ## Backend resources and data model
 
-- **Goal** stores title, description, start date, weekday schedule, and archive state. `days_of_week` uses Monday `0` through Sunday `6`; an empty list means every day.
-- **Occurrence** is one goal check-in for one date. Its status is `pending`, `done`, or `skipped`. A unique constraint prevents duplicate rows for the same goal and date.
-- **Task** stores title, notes, completion state, optional due date, and optional goal link.
-- **Revision** records changes to a goal's title, description, or schedule, including old and new values and an optional note. Archive changes are not revisions.
+- **Goal** stores a title, description, start date, weekday schedule, and archive state. In `days_of_week`, Monday is `0` and Sunday is `6`. An empty list means every day.
+- **Occurrence** stores one goal check-in for one date. Its status is `pending`, `done`, or `skipped`. A unique constraint allows one row for each goal and date.
+- **Task** stores a title, notes, completion state, optional due date, and optional goal link.
+- **Revision** stores changes to a goal's title, description, or schedule. It includes old and new values and an optional note. Archive changes do not create revisions.
 
 Routes are grouped in `backend/app/routes/`: `goals.py`, `tasks.py`, `today.py`, and `progress.py`. Shared API errors use `{"error":{"code":"...","message":"..."}}` and are formatted by `backend/app/errors.py`.
 
 ### Progress rules
 
-- There are no streaks. Progress is calculated over a requested date window.
+- The API does not calculate streaks. It calculates progress for a requested date range.
 - Skipped occurrences are excluded from the completion-rate denominator.
-- Check-in rows are created lazily when `/api/today` is requested. Progress derives scheduled dates from each goal's current schedule, even when the app was not opened that day.
-- Consequently, changing a goal's schedule can change historical scheduled counts. Completed check-ins remain counted.
-- Recovery suggestions use a simple threshold in `backend/app/routes/progress.py`; they are a product heuristic, not a validated assessment.
+- The API creates check-in rows when a client requests `/api/today`. Progress uses each goal's current schedule to calculate scheduled dates, even when the app was not open.
+- A schedule change can change scheduled counts for past dates. The API keeps completed check-ins.
+- Recovery suggestions use a threshold in `backend/app/routes/progress.py`. This is a product heuristic, not a validated assessment.
 
 ## Dates and time zones
 
-Dates such as a due date, goal start date, or occurrence date are plain `YYYY-MM-DD` values in the user's local calendar. The frontend should send its local date using helpers in `frontend/src/lib/dates.ts`; avoid converting these dates through `toISOString()`, which changes them to UTC and may shift the day.
+Dates such as due dates, goal start dates, and occurrence dates use the user's local calendar and the `YYYY-MM-DD` format. The frontend must send its local date. Use the helpers in `frontend/src/lib/dates.ts`. Do not use `toISOString()` for local dates. It converts dates to UTC and can change the day.
 
-The backend serializes timestamps as ISO 8601 UTC. When requesting Today or progress, the client sends the local date explicitly so the server's timezone does not choose the user's day. The server's `date.today()` defaults are fallbacks for callers that omit the date.
+The backend returns timestamps in ISO 8601 UTC format. For Today and progress requests, the client sends the local date. This prevents the server timezone from selecting the user's date. The server uses `date.today()` only when a caller omits the date.
 
 ## Where to make common changes
 
 | Change | Files to review |
 | --- | --- |
-| Add or edit a screen | `frontend/src/app/`, shared components under `frontend/src/components/`, and route setup in `_layout.tsx` |
+| Add or edit a screen | `frontend/src/app/`, shared components in `frontend/src/components/`, and route setup in `_layout.tsx` |
 | Add a frontend API call | `frontend/src/api/client.ts`, `frontend/src/types/models.ts`, and the screen or hook that uses it |
 | Add or change an endpoint | `backend/app/routes/`, validation in `backend/app/validation.py`, backend API tests, and frontend API/types if the contract changes |
-| Change stored data | `backend/app/models.py` and related routes/tests; note that `db.create_all()` does not migrate existing databases |
+| Change stored data | `backend/app/models.py` and related routes and tests. `db.create_all()` does not migrate existing databases. |
 | Change shared visual style | `frontend/src/constants/theme.ts` and shared components |
 | Change configuration or service startup | `frontend/app.json`, Dockerfiles, `docker-compose.yml`, and the relevant setup guide |
 
@@ -108,15 +108,15 @@ For frontend contribution conventions and checks, see [frontend/CONTRIBUTING.md]
 
 ## Developer onboarding
 
-### Docker Compose
+### Run with Docker Compose
 
-Docker Compose is the quickest way to run the API and web app together. From the repository root:
+Use Docker Compose to run the API and web app together. Run this command from the repository root:
 
 ```sh
 docker compose up --build
 ```
 
-Open the web app at `http://localhost:8080`; the API listens on `http://localhost:5000`. Check the API with `curl http://localhost:5000/api/health`. To use Expo Go from a phone, create a root `.env` containing your computer's LAN address and start Metro:
+Open the web app at `http://localhost:8080`. The API listens at `http://localhost:5000`. Check the API with `curl http://localhost:5000/api/health`. To use Expo Go on a phone, create a root `.env` file. Set your computer's LAN address, then start Metro:
 
 ```dotenv
 LAN_IP=192.168.1.20
@@ -126,7 +126,7 @@ LAN_IP=192.168.1.20
 docker compose --profile dev up --build metro
 ```
 
-The phone and computer need to share a network. `docker compose down` stops services and keeps named volumes. `docker compose down -v` also deletes the SQLite database volume and the cached Metro `node_modules` volume.
+Connect the phone and computer to the same network. Run `docker compose down` to stop the services and keep named volumes. Run `docker compose down -v` to also delete the SQLite database volume and the cached Metro `node_modules` volume.
 
 ### Manual development
 
@@ -141,7 +141,7 @@ cp .env.example .env  # optional; defaults work
 python run.py
 ```
 
-In another terminal, install and start the frontend:
+In a second terminal, install and start the frontend:
 
 ```sh
 cd frontend
@@ -150,7 +150,7 @@ cp .env.example .env
 npm start
 ```
 
-Use Expo Go to scan the development QR code. On a physical phone, set `EXPO_PUBLIC_API_URL` in `frontend/.env` to `http://<computer-LAN-IP>:5000`; `localhost` on the phone points to the phone. If port 5000 is occupied, run the manual backend with `PORT=5001` and change the frontend URL to port 5001.
+Use Expo Go to scan the development QR code. On a phone, set `EXPO_PUBLIC_API_URL` in `frontend/.env` to `http://<computer-LAN-IP>:5000`. On the phone, `localhost` points to the phone. If another service uses port 5000, run the backend with `PORT=5001` and set the frontend URL to port 5001.
 
 ### Environment variables
 
@@ -163,11 +163,11 @@ Use Expo Go to scan the development QR code. On a physical phone, set `EXPO_PUBL
 | `LAN_IP` | Docker Compose Metro service | Defaults to `localhost`; set this to the host computer's LAN IP for phone access and QR URLs. |
 | `WEB_API_URL` | Docker web image build | `http://localhost:5000`; Compose passes it as the build-time API URL embedded in the static web bundle. Rebuild `web` after changing it. |
 
-The repository has separate `backend/.env.example` and `frontend/.env.example` files. Create a root `.env` yourself for Compose overrides such as `LAN_IP` or `WEB_API_URL`.
+The repository has separate `backend/.env.example` and `frontend/.env.example` files. Create a root `.env` file for Compose settings such as `LAN_IP` or `WEB_API_URL`.
 
 ## API reference
 
-All endpoints are under `/api`, accept and return JSON unless a delete returns `204 No Content`, and use `snake_case` fields. Dates are `YYYY-MM-DD`; timestamps are ISO 8601 UTC. Invalid requests return `{"error":{"code":"...","message":"..."}}`.
+All endpoints use the `/api` prefix. They accept and return JSON, except that delete requests return `204 No Content`. JSON fields use `snake_case`. Dates use `YYYY-MM-DD`. Timestamps use ISO 8601 UTC. Invalid requests return `{"error":{"code":"...","message":"..."}}`.
 
 ### Shared object shapes
 
@@ -202,7 +202,7 @@ All endpoints are under `/api`, accept and return JSON unless a delete returns `
 }
 ```
 
-The objects above are illustrative; a Today occurrence also embeds its related `goal`. A revision has `id`, `goal_id`, `changes` (each changed field maps to `{ "from": ..., "to": ... }`), `note`, and `created_at`.
+The objects above are examples. A Today occurrence also contains its related `goal`. A revision contains `id`, `goal_id`, `changes`, `note`, and `created_at`. Each changed field in `changes` maps to `{ "from": ..., "to": ... }`.
 
 ### Endpoints
 
@@ -241,11 +241,11 @@ Content-Type: application/json
 {"title":"Choose a book","due_date":"2026-11-25","goal_id":12}
 ```
 
-`backend/README.md` remains the concise endpoint index and source for backend setup details.
+See `backend/README.md` for the endpoint index and backend setup instructions.
 
 ## Local deployment notes
 
-The backend uses SQLite and has no authentication. The default development server and current deployment setup are intended for local or trusted use, not as a public production service. See [DOCKER.md](DOCKER.md) for volume and rebuild behavior.
+The backend uses SQLite and has no authentication. Use the development server and current deployment setup only on a local or trusted network. Do not expose them as a public service. See [DOCKER.md](DOCKER.md) for volume and rebuild instructions.
 
 ## Verification
 
@@ -262,4 +262,4 @@ Backend tests run from `backend/`:
 pytest
 ```
 
-The tests use an isolated database configured in `backend/tests/conftest.py`. Avoid running destructive database commands against a database containing user data.
+The tests use an isolated database. The settings are in `backend/tests/conftest.py`. Do not run database deletion commands against a database that contains user data.

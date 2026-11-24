@@ -1,44 +1,44 @@
 # EZRA — Frontend
 
-Expo (React Native) app for EZRA, a self-care app built on encouragement, not streaks.
+This folder contains the EZRA app. The app uses Expo and React Native. It supports goals, tasks, and progress without streaks.
 
 ## Stack
 
-- [Expo](https://docs.expo.dev/) SDK 58 + React Native, TypeScript
+- [Expo](https://docs.expo.dev/) SDK 58, React Native, and TypeScript
 - [Expo Router](https://docs.expo.dev/router/introduction/) for file-based navigation
-- Talks to the Flask API in [`../backend`](../backend)
+- The app uses the Flask API in [`../backend`](../backend)
 
-## Getting started
+## Start the app
 
-1. Install [Node.js](https://nodejs.org/) 22.13 or newer and the **Expo Go** app on your phone.
-2. Install the locked dependencies:
+1. Install [Node.js](https://nodejs.org/) version 22.13 or newer. Install the **Expo Go** app on your phone.
+2. Install the dependencies from the lockfile:
    ```bash
    cd frontend
    npm ci
    ```
-3. Point the app at the backend:
+3. Set the API URL:
    ```bash
    cp .env.example .env
    ```
-   On a physical device, replace `localhost` with your computer's LAN IP (e.g. `http://192.168.1.20:5000`).
-   Start the backend first (see [`../backend`](../backend)). If macOS AirPlay holds port 5000, run the backend with `PORT=5001` and use `:5001` here.
-4. Start the dev server and scan the QR code with Expo Go:
+   On a phone, replace `localhost` with your computer's LAN IP. For example: `http://192.168.1.20:5000`.
+   Start the backend first. See the [backend guide](../backend/README.md). If macOS AirPlay uses port 5000, set `PORT=5001` for the backend. Use port 5001 in this file.
+4. Start the development server. Scan its QR code with Expo Go:
    ```bash
    npm start
    ```
-   Press `w` to open in a browser, `i` / `a` for iOS simulator / Android emulator.
+   Press `w` to open the web app. Press `i` to open the iOS simulator. Press `a` to open the Android emulator.
 
 ## Scripts
 
-| Command             | What it does          |
-| ------------------- | --------------------- |
-| `npm start`         | Start the dev server  |
-| `npm run lint`      | Lint with ESLint      |
-| `npm run typecheck` | Type-check with `tsc` |
+| Command             | Action |
+| ------------------- | ------ |
+| `npm start`         | Start the development server. |
+| `npm run lint`      | Run ESLint. |
+| `npm run typecheck` | Run the TypeScript check. |
 
 See [DEPENDENCIES.md](DEPENDENCIES.md) for adding packages, checking SDK compatibility, and fixing install problems.
 
-New to the codebase? Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and the patterns the screens use.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for the change workflow and screen patterns.
 
 ## Project structure
 
@@ -48,12 +48,12 @@ src/
     _layout.tsx        # Root stack
     (tabs)/            # Bottom tabs: Today, Lists, Goals, Progress
     goals/new.tsx      # Create a goal
-    goals/[id].tsx     # Edit a goal's plan, pause it, see revision history
-    tasks/new.tsx      # Add a task (name + short description); ?goalId= attaches it to a goal
-    tasks/[id].tsx     # Edit / reschedule / delete a task
-  api/client.ts        # Typed fetch wrapper for the Flask /api endpoints
+    goals/[id].tsx     # Edit or pause a goal; view its revision history
+    tasks/new.tsx      # Create a task. ?goalId= links it to a goal.
+    tasks/[id].tsx     # Edit, reschedule, or delete a task
+  api/client.ts        # Typed client for the Flask /api endpoints
   components/          # Shared UI (Screen, Card, Button, CheckRow, Field, Chips, ...)
-  constants/theme.ts   # Colors, spacing, typography from the MVP design
+  constants/theme.ts   # Shared colors, spacing, and typography
   lib/                 # Local-date helpers, useApi / useMutation hooks, navigation
   types/models.ts      # Response types matching the backend
 ```
@@ -70,7 +70,7 @@ src/
 
 ## Task fields
 
-What a task stores and where the app shows it (Sprint 3 requirements):
+This table shows the task fields and where the app displays them:
 
 | Requirement        | Backend field | Shown on                                    |
 | ------------------ | ------------- | ------------------------------------------- |
@@ -80,6 +80,6 @@ What a task stores and where the app shows it (Sprint 3 requirements):
 | Date updated       | `updated_at`  | Task card ("Updated"), once the backend sends it |
 | Due date / goal    | `due_date`, `goal_id` | Lists filters and goal groups, set in Edit task |
 
-Dates come from the backend in UTC and are shown in the phone's local time. `updated_at` is optional in `src/types/models.ts`, so the app works before and after the backend adds it.
+The backend sends timestamps in UTC. The app shows them in the phone's local time. Date-only fields use the user's local calendar date. `updated_at` is optional in `src/types/models.ts`. The app works if the backend sends this field or omits it.
 
-Every screen loads from the backend when it gains focus and has loading, error and empty states. Buttons are disabled while a request is in flight to prevent double submits.
+Each screen loads data from the backend when it gains focus. Each screen has loading, error, and empty states. The app disables buttons while a request runs. This prevents duplicate requests.
