@@ -6,7 +6,7 @@
 #
 # This does NOT run the iOS/Android app. Native binaries are built with EAS (see AGENTS.md).
 
-# react-native 0.86 / metro 0.84 require Node ^22.13 || ^24.3 || >=25
+# Expo SDK 58 / React Native 0.88 require Node.js 22.13 or newer.
 ARG NODE_VERSION=22
 
 # ---------- deps ----------
@@ -20,8 +20,11 @@ FROM node:${NODE_VERSION}-slim AS dev
 ENV EXPO_NO_TELEMETRY=1
 WORKDIR /app
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+COPY --chown=node:node docker-entrypoint.sh /usr/local/bin/ezra-dev-entrypoint
+RUN chmod 755 /usr/local/bin/ezra-dev-entrypoint
 COPY --chown=node:node . .
 USER node
+ENTRYPOINT ["/usr/local/bin/ezra-dev-entrypoint"]
 EXPOSE 8081
 CMD ["npx", "expo", "start"]
 
