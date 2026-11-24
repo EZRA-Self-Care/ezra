@@ -6,7 +6,7 @@
 #
 # This does NOT run the iOS/Android app. Native binaries are built with EAS (see AGENTS.md).
 
-# react-native 0.86 / metro 0.84 require Node ^22.13 || ^24.3 || >=25
+# Expo SDK 58 / React Native 0.88 require Node.js 22.13 or newer.
 ARG NODE_VERSION=22
 
 # ---------- deps ----------
