@@ -4,17 +4,17 @@ Expo (React Native) app for EZRA, a self-care app built on encouragement, not st
 
 ## Stack
 
-- [Expo](https://docs.expo.dev/) SDK 57 + React Native, TypeScript
+- [Expo](https://docs.expo.dev/) SDK 58 + React Native, TypeScript
 - [Expo Router](https://docs.expo.dev/router/introduction/) for file-based navigation
 - Talks to the Flask API in [`../backend`](../backend)
 
 ## Getting started
 
-1. Install [Node.js](https://nodejs.org/) (LTS) and the **Expo Go** app on your phone.
-2. Install dependencies:
+1. Install [Node.js](https://nodejs.org/) 22.13 or newer and the **Expo Go** app on your phone.
+2. Install the locked dependencies:
    ```bash
    cd frontend
-   npm install
+   npm ci
    ```
 3. Point the app at the backend:
    ```bash
@@ -36,7 +36,7 @@ Expo (React Native) app for EZRA, a self-care app built on encouragement, not st
 | `npm run lint`      | Lint with ESLint      |
 | `npm run typecheck` | Type-check with `tsc` |
 
-Add packages with `npx expo install <pkg>` (not `npm install`) so versions match the Expo SDK.
+See [DEPENDENCIES.md](DEPENDENCIES.md) for adding packages, checking SDK compatibility, and fixing install problems.
 
 New to the codebase? Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and the patterns the screens use.
 

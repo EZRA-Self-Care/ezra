@@ -12,3 +12,5 @@ How to run (recommended):  [`Docker`](DOCKER.md)
 
 
 See each folder's README for setup.
+
+For the architecture, request flow, data model, and pointers to common code changes, see the [codebase guide](CODEBASE.md).

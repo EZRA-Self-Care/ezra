@@ -7,7 +7,7 @@ A short guide for your first frontend change. Setup is in [README.md](README.md)
 1. Clone and install:
    ```bash
    git clone https://github.com/EZRA-Self-Care/ezra.git
-   cd ezra/frontend && npm install
+   cd ezra/frontend && npm ci
    ```
 2. Start the backend (see [`../backend/README.md`](../backend/README.md) or [`../DOCKER.md`](../DOCKER.md)). On macOS, if port 5000 is taken by AirPlay, run it with `PORT=5001`.
 3. Create `frontend/.env` with your computer's LAN IP (a phone can't reach `localhost`):
@@ -60,7 +60,7 @@ Always render the three states: `<Loading />`, `<ErrorState message={error} onRe
 
 ## 4. Adding a package
 
-Use `npx expo install <package>`, never `npm install <package>`. It picks the version that matches our Expo SDK; plain `npm install` caused version conflicts before.
+Use `npx expo install <package>` for Expo and React Native packages so the version matches our Expo SDK. See [DEPENDENCIES.md](DEPENDENCIES.md) for the full dependency workflow.
 
 ## Common problems
 
@@ -68,6 +68,7 @@ Use `npx expo install <package>`, never `npm install <package>`. It picks the ve
 | --- | --- |
 | Expo Go: "You need to be signed in" | `npx expo login` on your computer, and sign in to Expo Go with the same account |
 | App loads but shows "Can't reach the server" | Backend not running, wrong IP/port in `.env`, or phone on a different Wi-Fi. Restart `npm start` after editing `.env` |
-| `npm install` fails with `ERESOLVE` | Use `npx expo install <package>` instead |
+| `npm ci` reports that the lockfile and `package.json` disagree | Run `npm install` to refresh `package-lock.json`, then commit both files |
+| `npm install` fails with `ERESOLVE` or Expo reports mismatched packages | Run `npx expo install --fix`, then review and commit both `package.json` and `package-lock.json` |
 | "Port 8081 is running this app in another window" | An old dev server is still running; stop it with Ctrl+C in its terminal, or accept the other port |
 | Type errors about routes like `/tasks/[id]` | Start the dev server once (`npm start`); it regenerates the route types |
