@@ -33,7 +33,7 @@ docker compose down
 ## Current Deficiencies...
 
 - **API URL is baked into the web image.** Changing `WEB_API_URL` requires `docker compose build web`.
-- **Dependencies in the `metro` profile live in a named volume.** After changing `package.json`, run `docker compose down -v` and rebuild, or the volume keeps the old `node_modules`.
+- **Metro dependencies live in a named volume.** The Metro container checks `package.json` and `package-lock.json` at startup and runs `npm ci` when either changes. Rebuild/recreate Metro with `docker compose --profile dev up --build --force-recreate metro`; this preserves the database volume.
 - **Assumed env var name:** the frontend must read `process.env.EXPO_PUBLIC_API_URL`. If `src/api/client.ts` uses a different name, change it in the Dockerfile and compose file.
 - **Single gunicorn worker** is deliberate (SQLite + `create_all()` at startup).
 - No TLS and no auth. Not for the public internet as-is.

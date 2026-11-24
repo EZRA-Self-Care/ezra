@@ -44,4 +44,4 @@ npm install
 
 Then run `npm ci` to confirm the lockfile can reproduce the install. If npm reports `ERESOLVE`, first make sure Node.js is 22.13 or newer, use Expo's installer for Expo or React Native packages, and avoid mixing lockfiles from another package manager. Do not use `--force` or `--legacy-peer-deps` to hide a mismatch.
 
-For Docker's Metro profile, dependency folders are stored in a named volume. After changing frontend dependencies, recreate that volume with `docker compose down -v` before rebuilding the Metro service; this also removes the local development database volume, so back it up first if it contains data you need.
+For Docker's Metro profile, dependencies are stored in a named volume. The container checks `package.json` and `package-lock.json` at startup and runs `npm ci` when either file changes. Rebuild and recreate Metro with `docker compose --profile dev up --build --force-recreate metro`; this preserves the database volume.
