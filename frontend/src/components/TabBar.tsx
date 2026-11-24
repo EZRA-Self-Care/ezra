@@ -35,7 +35,7 @@ const useNativeDriver = Platform.OS !== 'web';
 const slotOf = (tabIndex: number) => (tabIndex < CENTRE ? tabIndex : tabIndex + 1);
 
 /** Custom tab bar passed to <Tabs tabBar>. Navigation works the same as the default bar. */
-export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
+export function TabBar({ state, descriptors, emitter, navigateToTab, insets }: BottomTabBarProps) {
   const [barWidth, setBarWidth] = useState(0);
   const [quickOpen, setQuickOpen] = useState(false);
   const [highlightX] = useState(() => new Animated.Value(0));
@@ -63,10 +63,10 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
     const [idle, active] = ICONS[route.name] ?? ['ellipse-outline', 'ellipse'];
     // Same press handling as React Navigation's default bar, so tab listeners still fire.
     const onPress = () => {
-      const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+      const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
       if (!focused && !event.defaultPrevented) {
         tapFeedback();
-        navigation.navigate(route.name, route.params);
+        navigateToTab(route.key);
       }
     };
     return (
