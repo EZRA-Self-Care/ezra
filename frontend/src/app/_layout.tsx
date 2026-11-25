@@ -37,6 +37,9 @@ export default function RootLayout() {
           headerShadowVisible: false,
           headerStyle: { backgroundColor: colors.background },
         }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="home" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="goals/new" options={{ title: 'New goal', presentation: 'modal' }} />
         <Stack.Screen name="goals/[id]" options={{ title: 'Goal' }} />
