@@ -13,3 +13,5 @@ For the recommended local setup, use [Docker](DOCKER.md).
 See the README file in each folder for setup instructions.
 
 See the [codebase guide](CODEBASE.md) for the architecture, request flow, data model, and common code changes.
+
+See the [technical documentation](docs/TECHNICAL_DOCUMENTATION.md) for the architecture, repository map, API overview, setup details, and dependency/license inventory.
