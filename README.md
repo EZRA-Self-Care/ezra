@@ -12,5 +12,3 @@ How to run (recommended):  [`Docker`](DOCKER.md)
 
 
 See each folder's README for setup.
-
-See the [technical documentation](docs/TECHNICAL_DOCUMENTATION.md) for the architecture, repository map, API overview, setup details, and dependency/license inventory.
