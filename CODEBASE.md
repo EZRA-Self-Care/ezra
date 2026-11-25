@@ -19,7 +19,7 @@ EZRA is a self-care app. It has goals, tasks, and progress without streaks. The 
 | `backend/tests/` | Flask API tests |
 | `docker-compose.yml`, `DOCKER.md` | Combined services and Docker workflows |
 
-For setup commands, see the [root README](README.md), [frontend guide](frontend/README.md), [backend guide](backend/README.md), and [Docker guide](DOCKER.md). See [frontend/DEPENDENCIES.md](frontend/DEPENDENCIES.md) to change frontend dependencies.
+See the [root README](README.md) for general setup. Use the [frontend guide](frontend/README.md), [backend guide](backend/README.md), and [Docker guide](DOCKER.md) to start each service. See [frontend/DEPENDENCIES.md](frontend/DEPENDENCIES.md) to change frontend packages. The [technical guide](docs/TECHNICAL_DOCUMENTATION.md) lists versions, licenses, and SDK references.
 
 ## How a request moves through the app
 
@@ -137,9 +137,10 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env  # optional; defaults work
 python run.py
 ```
+
+The backend reads `DATABASE_URL`, `CORS_ORIGINS`, and `PORT` from the process environment. `python run.py` does not load `.env` files. See `backend/.env.example` for the variable names and defaults.
 
 In a second terminal, install and start the frontend:
 

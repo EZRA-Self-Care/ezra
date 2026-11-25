@@ -1,10 +1,10 @@
 # EZRA Technical Documentation
 
-This guide describes the system represented by the checked-in source and lockfiles. Dependency versions and commands below were checked against `frontend/package.json`, `frontend/package-lock.json`, the Python requirements files, and the Docker configuration on 2026-11-24.
+This guide describes the system in the source files and lockfiles. Version and command details match the files as of 2026-11-24. These files are `frontend/package.json`, `frontend/package-lock.json`, the Python requirements files, and the Docker files.
 
 ## System overview
 
-EZRA is a single-user self-care application. The Expo client provides welcome/login presentation pages, a Today dashboard, goals, task lists, and progress views. The client calls a Flask JSON API. Flask persists goals, task records, goal check-ins, and goal edit history in SQLite.
+EZRA is a self-care application for one user. The Expo client has welcome and login screens, a Today dashboard, goals, task lists, and progress screens. The client calls a Flask JSON API. Flask stores goals, tasks, goal check-ins, and goal edit history in SQLite.
 
 ```mermaid
 flowchart LR
@@ -36,45 +36,47 @@ flowchart TB
   Metro -->|EXPO_PUBLIC_API_URL| Backend
 ```
 
-- **Web:** the frontend Docker target builds a static Expo web export and serves it through nginx. `WEB_API_URL` is embedded at build time; changing it requires rebuilding the `web` image.
-- **Mobile development:** the optional `metro` Compose profile serves JavaScript to Expo Go or a simulator. A phone must use the computer's LAN IP for the backend URL.
-- **Native builds:** Docker does not build iOS or Android binaries. The repository has no checked-in `ios/` or `android/` directories; native builds use Expo's managed/CNG workflow and EAS when configured.
-- **Storage:** Compose mounts a named `ezra-data` volume at `/data`; the backend image defaults to `sqlite:////data/ezra.db`. Direct local runs default to a database under Flask's instance directory.
+- **Web:** The frontend Docker target builds a static Expo web app. nginx serves the app. The build embeds `WEB_API_URL`. Rebuild the `web` image when you change this value.
+- **Mobile development:** The optional `metro` Compose profile serves the app to Expo Go or a simulator. A phone must use the computer's LAN IP address to reach the API.
+- **Native builds:** Docker does not build iOS or Android apps. This repository has no `ios/` or `android/` folders or EAS build configuration. You can configure Expo's managed workflow and EAS for a native build.
+- **Storage:** Compose mounts the `ezra-data` volume at `/data`. The backend image uses `sqlite:////data/ezra.db`. A local backend uses a database in Flask's instance folder.
 
 ## Request and data flow
 
-1. A screen in `frontend/src/app/` calls a function on the typed API object in `frontend/src/api/client.ts`.
-2. The client sends JSON to `EXPO_PUBLIC_API_URL` with the `/api` prefix. Network failures and API error bodies are converted to `ApiError` messages.
-3. The Flask app factory registers route blueprints, applies the configured CORS origins, registers JSON error handlers, and calls `db.create_all()`.
-4. Route handlers validate request data, read or update SQLAlchemy models, and return JSON.
+1. A screen in `frontend/src/app/` calls a function in `frontend/src/api/client.ts`.
+2. The client sends JSON to `EXPO_PUBLIC_API_URL`. It adds the `/api` prefix. It converts network failures and API errors to `ApiError` messages.
+3. The Flask app factory registers route blueprints and JSON error handlers. It sets the CORS origins and calls `db.create_all()`.
+4. Route handlers validate requests. They read or update SQLAlchemy models and return JSON.
 
-The API is unversioned beyond its `/api` prefix and does not currently publish an OpenAPI specification. Requests use JSON. Dates are ISO `YYYY-MM-DD`; timestamps are ISO-8601 UTC. The client sends the user's local date for date-based queries to avoid server-timezone errors around midnight.
+The API uses the `/api` prefix. It has no version number or OpenAPI specification. Requests use JSON. Dates use `YYYY-MM-DD`. Timestamps use ISO 8601 UTC. The client sends the user's local date with date-based requests. This prevents errors near midnight when the client and server use different time zones.
 
-The backend has **no authentication or per-user isolation**. Anyone who can reach the API can read and modify the same database. It is a development service and should not be exposed to the public internet as-is.
+The backend has no authentication or user separation. Anyone who can reach the API can read and change the database. Use this service for development. Do not expose it to the public internet.
 
 ### API route inventory
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/health` | Health check (`{"status":"ok"}`) |
-| `GET` | `/api/today?date=YYYY-MM-DD` | Scheduled goal occurrences, open tasks due by that date, and summary counts |
-| `PATCH` | `/api/occurrences/{id}` | Set a check-in to `pending`, `done`, or `skipped` |
-| `GET`, `POST` | `/api/goals` | List goals or create one; supports `include_archived=true` on list |
-| `GET`, `PATCH`, `DELETE` | `/api/goals/{id}` | Read, edit/archive, or delete a goal |
-| `GET` | `/api/goals/{id}/revisions` | Goal edit history, newest first |
-| `GET` | `/api/goals/{id}/occurrences?from=&to=` | Occurrences in a date range |
-| `GET`, `POST` | `/api/tasks` | List or create tasks; supports `done` and `goal_id` filters |
-| `GET`, `PATCH`, `DELETE` | `/api/tasks/{id}` | Read, update, or delete a task |
-| `GET` | `/api/progress?days=7&end=YYYY-MM-DD` | Completion totals, daily series, per-goal rates, and recovery suggestions |
+| `GET` | `/api/today?date=YYYY-MM-DD` | Returns scheduled goal check-ins, open tasks due by that date, and summary counts. |
+| `PATCH` | `/api/occurrences/{id}` | Sets the check-in status to `pending`, `done`, or `skipped`. |
+| `GET`, `POST` | `/api/goals` | Lists goals or creates a goal. The list accepts `include_archived=true`. |
+| `GET`, `PATCH`, `DELETE` | `/api/goals/{id}` | Reads, edits, archives, or deletes a goal. |
+| `GET` | `/api/goals/{id}/revisions` | Returns goal edit history, newest first. |
+| `GET` | `/api/goals/{id}/occurrences?from=&to=` | Returns check-ins in a date range. |
+| `GET`, `POST` | `/api/tasks` | Lists or creates tasks. The list accepts `done` and `goal_id` filters. |
+| `GET`, `PATCH`, `DELETE` | `/api/tasks/{id}` | Reads, changes, or deletes a task. |
+| `GET` | `/api/progress?days=7&end=YYYY-MM-DD` | Returns completion totals, daily counts, goal rates, and recovery suggestions. |
 
-Goal schedules use weekday numbers `0=Monday` through `6=Sunday`; an empty schedule means every day. Occurrences are created lazily when `/api/today` is requested. Skipped check-ins are excluded from completion rates. The recovery suggestions use a simple threshold heuristic and are not a validated behavior model.
+Goal schedules use weekday numbers. `0` is Monday and `6` is Sunday. An empty schedule means every day. The API creates check-ins when a client requests `/api/today`. Skipped check-ins do not count in completion rates. Recovery suggestions use a threshold. They are not a validated behavior model.
+
+See the [API reference in the codebase guide](../CODEBASE.md#api-reference) for request and response shapes.
 
 ## Repository map
 
 | Path | Responsibility |
 | --- | --- |
-| `frontend/src/app/` | Expo Router routes. Root `index.tsx`, `login.tsx`, and `home.tsx` provide the landing flow; `(tabs)/` contains Today, Lists, Goals, and Progress; `tasks/` and `goals/` contain create/detail screens. |
-| `frontend/src/components/` | Reusable controls and UI: task cards, check rows, forms, tab bar, empty/error/loading states, progress charts, and focus cards. |
+| `frontend/src/app/` | Expo Router routes. The root `index.tsx`, `login.tsx`, and `home.tsx` files provide the landing flow. `(tabs)/` contains Today, Lists, Goals, and Progress. `tasks/` and `goals/` contain create and detail screens. |
+| `frontend/src/components/` | Shared controls and screens. These include task cards, check rows, forms, the tab bar, request states, progress charts, and focus cards. |
 | `frontend/src/api/client.ts` | Base URL, JSON request/error handling, and typed API methods. |
 | `frontend/src/types/models.ts` | TypeScript shapes corresponding to API responses and inputs. |
 | `frontend/src/constants/theme.ts` | Shared colors, spacing, radii, and typography. |
@@ -83,7 +85,7 @@ Goal schedules use weekday numbers `0=Monday` through `6=Sunday`; an empty sched
 | `backend/app/__init__.py` | Flask application factory, configuration, CORS, route registration, and table creation. |
 | `backend/app/routes/` | HTTP endpoint handlers grouped by goals, tasks, today/check-ins, and progress. |
 | `backend/app/models.py` | Goal, Task, Occurrence, and Revision database models. |
-| `backend/app/validation.py`, `errors.py` | Input validation and consistent JSON error responses. |
+| `backend/app/validation.py`, `errors.py` | Validates input and formats JSON error responses. |
 | `backend/app/extensions.py` | Shared Flask-SQLAlchemy extension instance. |
 | `backend/tests/` | Pytest API test fixtures and endpoint coverage. |
 | `docker-compose.yml` | Backend, static web, and opt-in Metro services and named volumes. |
@@ -91,16 +93,16 @@ Goal schedules use weekday numbers `0=Monday` through `6=Sunday`; an empty sched
 | `frontend/Dockerfile` | Node dependencies, Metro development target, Expo web export, and nginx runtime stages. |
 | `frontend/nginx.conf` | SPA fallback, compression, and static asset caching rules. |
 
-## Installation and local development
+## Install and run the project
 
 ### Supported toolchain
 
-- **Node.js:** `frontend/AGENTS.md` requires Node.js 22.13 or newer. The frontend Dockerfile uses the moving `node:22-slim` image tag.
-- **Python:** the backend image uses `python:3.12-slim`. For local development, use Python 3.12.
-- **Docker:** Docker Engine with the Docker Compose plugin is the recommended full-stack setup.
-- **Expo Go:** optional for device development. A physical phone and development computer must be on a network that can reach the same LAN API address.
+- **Node.js:** Use version 22.13 or newer. `frontend/AGENTS.md` sets this minimum. The Dockerfile uses the `node:22-slim` tag.
+- **Python:** Use Python 3.12 for local development. The backend image uses `python:3.12-slim`.
+- **Docker:** Install Docker Engine and the Docker Compose plugin to run all services together.
+- **Expo Go:** Use Expo Go to test on a phone. Connect the phone and computer to the same network. Set the API URL to the computer's LAN address.
 
-### Recommended: Docker Compose
+### Run with Docker Compose
 
 From the repository root:
 
@@ -108,9 +110,9 @@ From the repository root:
 docker compose up --build
 ```
 
-Open the web client at `http://localhost:8080`; the API health endpoint is `http://localhost:5000/api/health`.
+Open the web app at `http://localhost:8080`. Check the API at `http://localhost:5000/api/health`.
 
-Compose reads optional variables from a root `.env` file. There is no root `.env.example` in this repository. The Compose defaults work for browser-on-the-same-machine development. To use Expo Go on a phone, create a root `.env` with the computer's LAN address, for example:
+Compose reads optional values from a root `.env` file. This repository does not include a root `.env.example` file. The default settings support a browser on the same computer. To use Expo Go on a phone, create a root `.env` file with the computer's LAN address. For example:
 
 ```dotenv
 LAN_IP=192.168.1.20
@@ -124,7 +126,7 @@ Then start the Metro profile:
 docker compose --profile dev up --build metro
 ```
 
-Stop containers with `docker compose down`. **`docker compose down -v` removes the SQLite data volume and Metro dependency cache.**
+Run `docker compose down` to stop the containers. Run `docker compose down -v` to delete the SQLite data and Metro dependency cache.
 
 ### Manual backend
 
@@ -136,7 +138,7 @@ python -m pip install -r requirements-dev.txt
 python run.py
 ```
 
-The API binds to `0.0.0.0:5000`. Defaults use SQLite and allow the local Expo web origin on port 8081. To configure the process, export variables before running it; `run.py` does not load `.env` files itself:
+The API listens on `0.0.0.0:5000`. The default database is SQLite. The default CORS origin is the Expo web app on port 8081. `run.py` does not load `.env` files. To set configuration, export these variables before you start the server:
 
 ```bash
 export DATABASE_URL=sqlite:///ezra.db
@@ -144,7 +146,11 @@ export CORS_ORIGINS=http://localhost:8081
 export PORT=5000
 ```
 
-Run backend checks from `backend/` with `pytest`.
+Run backend checks from `backend/`:
+
+```bash
+pytest
+```
 
 ### Manual frontend
 
@@ -155,7 +161,7 @@ cp .env.example .env
 npm start
 ```
 
-Edit `frontend/.env` and set `EXPO_PUBLIC_API_URL` to the API address. Keep `http://localhost:5000` for a browser or emulator on the same machine; use `http://<computer-LAN-IP>:5000` on a physical device. In the Expo CLI, press `w` for web or scan the QR code with Expo Go.
+Edit `frontend/.env`. Set `EXPO_PUBLIC_API_URL` to the API address. Use `http://localhost:5000` for a browser or emulator on the same computer. Use `http://<computer-LAN-IP>:5000` on a phone. In the Expo CLI, press `w` to open the web app. Or scan the QR code with Expo Go.
 
 Frontend checks:
 
@@ -164,11 +170,11 @@ npm run lint
 npm run typecheck
 ```
 
-Install Expo-compatible libraries with `npx expo install <package>`. Avoid manually changing Expo package versions without checking SDK compatibility.
+Use `npx expo install <package>` to add an Expo-compatible library. Check SDK compatibility before you change Expo package versions by hand.
 
 ## API, SDKs, runtimes, and libraries
 
-Versions in the frontend **Resolved version** column are the exact top-level versions recorded by `frontend/package-lock.json`. The frontend manifest contains ranges for some packages. Python requirements use compatible-release constraints and **there is no Python lockfile**, so the table lists declared constraints, not the exact versions installed in a particular environment.
+The **Resolved version** column lists the exact top-level versions in `frontend/package-lock.json`. `frontend/package.json` uses version ranges for some packages. The Python requirements files set version constraints. They do not lock exact versions. The Python table lists the constraints, not the installed versions.
 
 ### Frontend direct dependencies
 
@@ -198,7 +204,7 @@ Versions in the frontend **Resolved version** column are the exact top-level ver
 | `eslint-config-expo` | Expo lint rules | 57.0.2 | MIT | [npm](https://www.npmjs.com/package/eslint-config-expo) |
 | `typescript` | TypeScript compiler | 6.0.3 | Apache-2.0 | [npm](https://www.npmjs.com/package/typescript) |
 
-The lockfile contains the full transitive npm dependency graph and registry tarball URLs. The companion [npm dependency and license inventory](DEPENDENCY_LICENSES.csv) lists all 853 package entries in the checked-in lockfile with resolved version, declared license metadata, and source archive. Thirty-eight entries do not declare a license in the lockfile; inspect those package archives before redistribution. Use `npm ls --all` to inspect the installed tree. Review license notices for the precise artifacts included in a production bundle.
+The lockfile lists all npm packages and their registry archive URLs. The [npm dependency and license inventory](DEPENDENCY_LICENSES.csv) lists all 853 package entries, their versions, license data, and source archives. Thirty-eight entries have no license data in the lockfile. Check those packages before you redistribute the app. Run `npm ls --all` to view the installed packages. Review the license notices for the files in a production bundle.
 
 ### Backend direct dependencies
 
@@ -210,7 +216,7 @@ The lockfile contains the full transitive npm dependency graph and registry tarb
 | `gunicorn` | WSGI server in Docker | `~=26.2` | MIT | [PyPI](https://pypi.org/project/gunicorn/), [source](https://github.com/benoitc/gunicorn) |
 | `pytest` (development only) | Backend test runner | `~=9.0` | MIT | [PyPI](https://pypi.org/project/pytest/), [source](https://github.com/pytest-dev/pytest) |
 
-`Flask-SQLAlchemy` depends on SQLAlchemy; SQLite is provided by Python's standard library. The Python transitive dependency versions are not locked and cannot be enumerated reproducibly from the current files. A reproducible software bill of materials for Python requires creating and checking in a resolved lock file or generating one from a specific environment.
+`Flask-SQLAlchemy` uses SQLAlchemy. Python includes SQLite in its standard library. The current files do not lock transitive Python package versions. Add a Python lockfile to record these versions. You can also create an inventory from one specific environment.
 
 ### Platform and service versions
 
@@ -226,9 +232,9 @@ The lockfile contains the full transitive npm dependency graph and registry tarb
 | Docker Compose | Compose file version field omitted; installed plugin supplies the version | Apache-2.0 for the Compose plugin | [Compose source and license](https://github.com/docker/compose) |
 | Expo Go (optional) | Version installed by the developer; not pinned by this repository | Proprietary application; not bundled as a project dependency | [Expo Go](https://expo.dev/go) |
 
-Docker base tags (`node:22-slim`, `python:3.12-slim`, `nginxinc/nginx-unprivileged:stable-alpine`) are not pinned to patch versions or image digests. Their operating-system packages also have licenses independent of the direct libraries listed above.
+The Dockerfiles use base image tags: `node:22-slim`, `python:3.12-slim`, and `nginxinc/nginx-unprivileged:stable-alpine`. These tags do not identify a fixed patch version or image digest. Operating system packages in these images have their own licenses.
 
-The package-manager manifest/lockfile is the authoritative source for library versions. `node_modules` is not a source of truth: it may contain a different version if dependencies were installed from another branch or reused from a container volume.
+Use `frontend/package.json` and `frontend/package-lock.json` as the source for frontend package versions. The `node_modules` folder can contain different versions if it came from another branch or an old container volume.
 
 ## Data model and persistence
 
@@ -237,7 +243,7 @@ The package-manager manifest/lockfile is the authoritative source for library ve
 - **Occurrence:** one scheduled goal check-in per goal/date, with a unique `(goal_id, date)` constraint and `pending`, `done`, or `skipped` status.
 - **Revision:** goal edit snapshot containing changed fields and an optional note.
 
-Tables are initialized with `db.create_all()`. It creates missing tables but does not migrate existing schema. Use a migration system before making schema changes after real data exists. SQLite is configured with one Gunicorn worker to avoid concurrent write and startup table-creation races.
+The app creates tables with `db.create_all()`. This creates missing tables. It does not change existing tables. Add a migration system before you change a schema that contains real data. Gunicorn uses one worker with SQLite. This avoids concurrent writes and table-creation conflicts at startup.
 
 ## Configuration reference
 
@@ -252,25 +258,26 @@ Tables are initialized with `db.create_all()`. It creates missing tables but doe
 
 ## Licensing and notices
 
-This repository does not currently include a root `LICENSE` file declaring EZRA's own license. Third-party license notices do not establish the project's license. Confirm and add a project license before redistributing the application.
+This repository has no root `LICENSE` file for EZRA. Third-party licenses do not set the license for this project. Add a project license before you redistribute EZRA.
 
-The direct dependency inventory above records package sources, resolved or declared versions, and upstream license identifiers. npm transitive packages are captured in `frontend/package-lock.json`; Python transitive packages are not pinned. License metadata comes from the package manager lockfile or upstream package metadata and should be checked against the exact artifact before distribution. Preserve third-party copyright and license notices in distributed builds.
+The tables above list direct package sources, versions, and license identifiers. `frontend/package-lock.json` lists npm transitive packages. The Python requirements do not pin transitive package versions. Check each license against the package you distribute. Keep third-party copyright and license notices in distributed builds.
 
 ## Known technical limits
 
-- No authentication, account system, or multi-user data partitioning.
-- No production deployment recipe for HTTPS, secrets management, backups, or database upgrades.
-- SQLite, one Gunicorn worker, and `db.create_all()` target a small development deployment.
-- The API has no OpenAPI document or explicit version segment.
-- Backend dependency constraints are not reproducible without a Python lockfile.
-- Several Docker base images use moving tags instead of immutable digests.
-- The landing login screen is a design/navigation flow; credentials are not sent to an authentication service.
+- The API has no authentication, account system, or separate data for multiple users.
+- The repository has no production setup for HTTPS, secret storage, backups, or database upgrades.
+- SQLite, one Gunicorn worker, and `db.create_all()` support a small development deployment.
+- The API has no OpenAPI document or version segment.
+- Backend package versions are not fixed by a lockfile.
+- Some Docker base image tags can point to different image versions over time.
+- The login screen is a design flow. It does not send credentials to an authentication service.
 
 ## Primary reference files
 
 - [Root README](../README.md)
 - [Docker setup](../DOCKER.md)
-- [Backend README and detailed endpoints](../backend/README.md)
+- [Backend setup](../backend/README.md)
+- [Codebase guide with API shapes and component details](../CODEBASE.md)
 - [Frontend README](../frontend/README.md)
 - [Frontend agent/development requirements](../frontend/AGENTS.md)
 - [Frontend package manifest](../frontend/package.json) and [lockfile](../frontend/package-lock.json)

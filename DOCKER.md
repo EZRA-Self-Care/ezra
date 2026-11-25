@@ -1,22 +1,22 @@
 # Docker
 
-This file, `docker-compose.yml`, and `.env.example` are in the repository root. The `backend/` and `frontend/` folders are also in this folder.
+This file and `docker-compose.yml` are in the repository root. The `backend/` and `frontend/` folders are also in this folder. The `.env.example` files are in the `backend/` and `frontend/` folders.
 
 ## What each container is
 
 | Service | Image target | What it does |
 | --- | --- | --- |
-| `backend` | `backend/Dockerfile` | Flask API under gunicorn, SQLite in the `ezra-data` volume, port 5000 |
-| `web` | `frontend/Dockerfile` → `web` | Static Expo **web** export served by nginx, port 8080 |
-| `metro` | `frontend/Dockerfile` → `dev` | Metro dev server for Expo Go, port 8081 (opt-in profile) |
+| `backend` | `backend/Dockerfile` | Runs the Flask API with Gunicorn. Stores SQLite data in the `ezra-data` volume. Uses port 5000. |
+| `web` | `frontend/Dockerfile` → `web` | Serves the static Expo web app with nginx. Uses port 8080. |
+| `metro` | `frontend/Dockerfile` → `dev` | Runs the Metro development server for Expo Go. Uses port 8081. Start it with the `dev` profile. |
 
 Docker does not run the iOS or Android app. To test on a phone, use Expo Go with the `metro` service. You can also use EAS to build a native app.
 
 ## Run the services
 
-```bash
-cp .env.example .env             # Edit LAN_IP if you will use a phone.
+To use Expo Go on a phone, create a root `.env` file. Set `LAN_IP` to your computer's LAN address. For example, use `LAN_IP=192.168.1.20`.
 
+```bash
 # Build and run the backend alone.
 docker build -t backend backend && docker run -p 5000:5000 -v ezra-data:/data backend
 
@@ -33,7 +33,7 @@ docker compose down
 ## Configuration and limits
 
 - The web image includes the API URL at build time. If you change `WEB_API_URL`, rebuild the web image with `docker compose build web`.
-- Metro dependencies are stored in a named volume. At startup, Metro checks `package.json` and `package-lock.json`. It runs `npm ci` if either file changed. To rebuild and recreate Metro, run `docker compose --profile dev up --build --force-recreate metro`. This command keeps the database volume.
+- Metro dependencies are stored in a named volume. If `package.json` or `package-lock.json` changes, update the volume with `docker compose --profile dev run --rm --no-deps metro npm ci`. This command keeps the database volume.
 - The frontend reads `process.env.EXPO_PUBLIC_API_URL`. If you change this name in `src/api/client.ts`, update the Dockerfile and Compose file.
 - Gunicorn uses one worker. SQLite and startup table creation require this configuration.
 - The services do not use TLS or authentication. Do not expose this setup to the public internet.

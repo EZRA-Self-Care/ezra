@@ -4,7 +4,7 @@ This folder contains the EZRA app. The app uses Expo and React Native. It suppor
 
 ## Stack
 
-- [Expo](https://docs.expo.dev/) SDK 58, React Native, and TypeScript
+- [Expo](https://docs.expo.dev/) SDK 57, React Native, and TypeScript
 - [Expo Router](https://docs.expo.dev/router/introduction/) for file-based navigation
 - The app uses the Flask API in [`../backend`](../backend)
 
