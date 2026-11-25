@@ -1,66 +1,66 @@
 # Contributing to the EZRA frontend
 
-A short guide for your first frontend change. Setup is in [README.md](README.md); this covers the workflow and the patterns the screens already use.
+Use this guide to make a frontend change. Follow [README.md](README.md) to set up the app. This guide describes the change workflow and screen patterns.
 
-## 1. Get it running (once)
+## 1. Start the app
 
 1. Clone and install:
    ```bash
    git clone https://github.com/EZRA-Self-Care/ezra.git
-   cd ezra/frontend && npm install
+   cd ezra/frontend && npm ci
    ```
-2. Start the backend (see [`../backend/README.md`](../backend/README.md) or [`../DOCKER.md`](../DOCKER.md)). On macOS, if port 5000 is taken by AirPlay, run it with `PORT=5001`.
-3. Create `frontend/.env` with your computer's LAN IP (a phone can't reach `localhost`):
+2. Start the backend. See [`../backend/README.md`](../backend/README.md) or [`../DOCKER.md`](../DOCKER.md). On macOS, AirPlay can use port 5000. If it does, set `PORT=5001`.
+3. Create `frontend/.env`. Set your computer's LAN IP. A phone cannot use your computer's `localhost` address:
    ```
    EXPO_PUBLIC_API_URL=http://192.168.x.x:5001
    ```
-4. Sign in to Expo on your computer (`npx expo login`) **and** in the Expo Go app on your phone, with the same account. Expo Go won't open the project otherwise.
-5. `npm start`, then scan the QR code with your phone's camera. Keep the phone on the same Wi-Fi.
+4. Sign in to Expo on your computer with `npx expo login`. Sign in to Expo Go on your phone with the same account.
+5. Run `npm start`. Scan the QR code with your phone's camera. Connect the phone and computer to the same Wi-Fi network.
 
-The dev server runs on your **computer**. Your phone only needs Expo Go.
+The development server runs on your computer. Your phone needs Expo Go.
 
 ## 2. Make a change
 
 ```bash
 git switch main && git pull
-git switch -c your-name/short-description   # e.g. logan/delete-confirmation
-# ...edit...
+git switch -c your-name/short-description   # Example: logan/delete-confirmation
+# Edit the files.
 npm run typecheck && npm run lint            # both must pass
 git add <the files you changed>              # not `git add -A`
 git commit -m "Add confirmation before deleting a task"
 git push -u origin your-name/short-description
 ```
 
-Then open a pull request into `main` on GitHub and ask someone to review it. Keep PRs small: one task per PR is ideal.
+Open a pull request to `main` on GitHub. Ask a teammate to review it. Keep each pull request focused on one task.
 
 ## 3. Patterns to follow
 
-**Talking to the backend.** All requests go through [`src/api/client.ts`](src/api/client.ts). Field names match the backend exactly (`snake_case`), and types live in [`src/types/models.ts`](src/types/models.ts). If the backend changes a field, update both files in the same PR.
+**API requests.** Send all requests through [`src/api/client.ts`](src/api/client.ts). Use the backend field names (`snake_case`). Types are in [`src/types/models.ts`](src/types/models.ts). If a backend field changes, update both files in the same pull request.
 
-**Loading data on a screen.** Use `useApi` with a `useCallback`-wrapped loader. It reloads whenever the screen gains focus, so edits made on other screens show up:
+**Load screen data.** Use `useApi` with a loader wrapped in `useCallback`. The hook reloads data when the screen gains focus. This shows edits made on other screens:
 
 ```tsx
 const load = useCallback(() => api.tasks.list(), []);
 const { data, error, loading, reload } = useApi<Task[]>(load);
 ```
 
-Always render the three states: `<Loading />`, `<ErrorState message={error} onRetry={reload} />`, and an `<EmptyState />` when there's nothing to show (see [`src/components/StateView.tsx`](src/components/StateView.tsx)).
+Render the loading and error states. Render an empty state when the screen has no data. See [`src/components/StateView.tsx`](src/components/StateView.tsx): `<Loading />`, `<ErrorState message={error} onRetry={reload} />`, and `<EmptyState />`.
 
-**Saving data.** Wrap writes in `useMutation().run(...)` and pass `disabled={mutation.busy}` to the button, so a double tap can't send two requests. Show `mutation.error` with `<ErrorState />`.
+**Save data.** Run write requests with `useMutation().run(...)`. Set the button's `disabled` prop to `mutation.busy`. This prevents duplicate requests. Show `mutation.error` with `<ErrorState />`.
 
-**Forms that edit existing data.** Load first, then mount the form with its starting values (see `TaskForm` in [`src/app/tasks/[id].tsx`](src/app/tasks/[id].tsx)). Don't copy loaded data into state inside a `useEffect`; the lint rules reject it.
+**Edit forms.** Load the data before you mount the form. Pass the loaded values as its initial values. See `TaskForm` in [`src/app/tasks/[id].tsx`](src/app/tasks/[id].tsx). Do not copy loaded data into state inside `useEffect`. The lint rules reject this pattern.
 
-**Dates.** The backend expects the user's *local* date. Use the helpers in [`src/lib/dates.ts`](src/lib/dates.ts) (`localDate()`, `formatDue()`) instead of `new Date().toISOString()`, which gives the UTC date and is wrong near midnight.
+**Dates.** The backend expects the user's local date. Use `localDate()` and `formatDue()` from [`src/lib/dates.ts`](src/lib/dates.ts). Do not use `new Date().toISOString()` for a local date. It returns a UTC date, which can be different near midnight.
 
-**After saving, go back** with `goBack('/lists')` from [`src/lib/navigation.ts`](src/lib/navigation.ts). It falls back to a tab when the screen was opened directly from a link.
+**Return after save.** Use `goBack('/lists')` from [`src/lib/navigation.ts`](src/lib/navigation.ts). The function opens a tab if a link opened the screen directly.
 
-**Styling.** Use the colors, spacing and text styles in [`src/constants/theme.ts`](src/constants/theme.ts) and the shared components (`Screen`, `Card`, `Button`, `Field`, `Chips`, `CheckRow`). Don't hard-code hex colors.
+**Styles.** Use the colors, spacing, and text styles in [`src/constants/theme.ts`](src/constants/theme.ts). Use shared components such as `Screen`, `Card`, `Button`, `Field`, `Chips`, and `CheckRow`. Do not hard-code hex colors.
 
-**Wording.** EZRA encourages instead of punishing: "Carried over", not "Overdue"; skipping has no penalty.
+**App wording.** Use supportive language. Use “Carried over” for a task from an earlier date. Skipping a goal has no penalty.
 
 ## 4. Adding a package
 
-Use `npx expo install <package>`, never `npm install <package>`. It picks the version that matches our Expo SDK; plain `npm install` caused version conflicts before.
+Use `npx expo install <package>` for Expo and React Native packages so the version matches our Expo SDK. See [DEPENDENCIES.md](DEPENDENCIES.md) for the full dependency workflow.
 
 ## Common problems
 
@@ -68,6 +68,7 @@ Use `npx expo install <package>`, never `npm install <package>`. It picks the ve
 | --- | --- |
 | Expo Go: "You need to be signed in" | `npx expo login` on your computer, and sign in to Expo Go with the same account |
 | App loads but shows "Can't reach the server" | Backend not running, wrong IP/port in `.env`, or phone on a different Wi-Fi. Restart `npm start` after editing `.env` |
-| `npm install` fails with `ERESOLVE` | Use `npx expo install <package>` instead |
+| `npm ci` reports that the lockfile and `package.json` disagree | Run `npm install` to refresh `package-lock.json`, then commit both files |
+| `npm install` fails with `ERESOLVE` or Expo reports mismatched packages | Run `npx expo install --fix`, then review and commit both `package.json` and `package-lock.json` |
 | "Port 8081 is running this app in another window" | An old dev server is still running; stop it with Ctrl+C in its terminal, or accept the other port |
 | Type errors about routes like `/tasks/[id]` | Start the dev server once (`npm start`); it regenerates the route types |

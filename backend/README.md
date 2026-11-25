@@ -1,38 +1,40 @@
 # EZRA — Backend
 
-Flask + SQLite API for the EZRA Expo app (`../frontend`).
+This folder contains the Flask and SQLite API for the EZRA Expo app (`../frontend`).
 
-## Run (Docker): goto [`DOCKER.md`](../DOCKER.md)
+## Run with Docker
 
+See the [Docker guide](../DOCKER.md).
 
-## Run (manual)
+## Run locally
 
 ```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env        # optional; defaults work
 python run.py               # http://0.0.0.0:5000
 pytest                      # tests
 ```
 
-Point the frontend at `http://<your-LAN-IP>:5000` when testing on a phone.
-On macOS, port 5000 is often taken by AirPlay Receiver; set `PORT=5001` and update the frontend `.env`.
+The server reads `DATABASE_URL`, `CORS_ORIGINS`, and `PORT` from the process environment. `python run.py` does not load `.env` files. See `.env.example` for the variable names and defaults.
+
+When you test on a phone, set the frontend API URL to `http://<your-LAN-IP>:5000`.
+On macOS, AirPlay Receiver can use port 5000. If it does, set `PORT=5001` and update the frontend `.env` file.
 
 ## Conventions
 
-- All routes are under `/api`. JSON in, JSON out, `snake_case` keys.
-- Dates are `YYYY-MM-DD`; timestamps are ISO-8601 UTC.
-- Errors: `{"error": {"code": "...", "message": "..."}}` with a matching HTTP status.
-- **Send the client's local date** (`?date=`, `start_date`, `end=`). The server's `date.today()` is only a fallback and will be wrong near midnight for users far from the server's timezone.
-- No auth, single-user. Anyone who can reach the server can read and write everything.
+- All routes use the `/api` prefix. Send and receive JSON. JSON keys use `snake_case`.
+- Dates use `YYYY-MM-DD`. Timestamps use ISO 8601 UTC.
+- Errors use `{"error": {"code": "...", "message": "..."}}`. The API also returns a matching HTTP status.
+- Send the client's local date in `?date=`, `start_date`, and `end=` values. The server uses `date.today()` only as a fallback. The server date can differ from the client's date near midnight.
+- The API has no authentication and supports one user. Anyone who can reach the server can read and change all data.
 
 ## Endpoints
 
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/api/health` | |
-| GET | `/api/today?date=` | Scheduled goal occurrences (created on demand), tasks due/overdue, summary |
+| GET | `/api/today?date=` | Scheduled goal check-ins (created on request), open tasks due on or before the date, and summary counts |
 | PATCH | `/api/occurrences/<id>` | `{status: "pending" \| "done" \| "skipped"}` |
 | GET / POST | `/api/goals` | `?include_archived=true`. POST: `title`, `description?`, `days_of_week?` (0=Mon..6=Sun, empty = daily), `start_date?` |
 | GET / PATCH / DELETE | `/api/goals/<id>` | PATCH also takes `archived` and `note`; edits to title/description/days create a Revision |
@@ -42,16 +44,18 @@ On macOS, port 5000 is often taken by AirPlay Receiver; set `PORT=5001` and upda
 | GET / PATCH / DELETE | `/api/tasks/<id>` | |
 | GET | `/api/progress?days=14&end=` | Per-day counts, per-goal rates, `recovery` suggestions. `days` max 90 |
 
-## Design notes
+See the [codebase guide](../CODEBASE.md#api-reference) for request and response shapes.
 
-- **No streaks.** Progress is counts and rates over a window. `skipped` is a first-class status and is excluded from the completion rate, so rest days don't count against anyone.
-- **Occurrences are lazy.** Rows appear when `/api/today` is called for a date. `/api/progress` computes scheduled days from the goal's schedule, so days the app was never opened still count as scheduled.
-- **Recovery** is a plain threshold heuristic (`routes/progress.py`: ≥3 attempts and <50% completion). It's a placeholder, not a validated behavior model.
+## Behavior
+
+- The API does not calculate streaks. It reports counts and rates for a date range. The `skipped` status is excluded from the completion rate.
+- The API creates occurrence rows when a client calls `/api/today` for a date. `/api/progress` calculates scheduled days from each goal's schedule. It includes dates when the app was not open.
+- Recovery suggestions use a threshold in `routes/progress.py`: at least three attempts and less than 50% completion. This is a product heuristic. It is not a validated behavior model.
 
 ## Known limitations
 
-- Schema is created with `db.create_all()`. It won't alter existing tables; once you have real data, add Flask-Migrate.
-- Editing a goal's schedule changes how past days are counted in `/api/progress` (done days are never removed, but "scheduled" uses the current schedule).
-- Tasks are a flat list; there are no named lists.
-- Reminders (UI-05) are not handled here. Local notifications are scheduled on-device.
-- Dev server only. Use gunicorn or similar behind HTTPS for anything real.
+- `db.create_all()` creates tables. It does not change existing tables. Add Flask-Migrate before you need to change a database schema that contains user data.
+- If you edit a goal's schedule, `/api/progress` uses the new schedule for past dates. It keeps completed check-ins.
+- Tasks use one flat list. The API does not support named lists.
+- The API does not handle reminders (UI-05). The device schedules local notifications.
+- The Flask development server is for development. For a deployed service, use Gunicorn behind HTTPS.
